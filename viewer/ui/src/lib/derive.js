@@ -1,11 +1,12 @@
 import { STATUSES } from './status.js'
 
-// Weight each status toward "done". Mirrors the intent of the server's percent
-// so the filtered view stays visually consistent with the unfiltered one.
+// Weight each status toward "done". These MUST match STATUS_WEIGHTS in
+// core/models.py, otherwise the min-bar-filtered percentages drift away from
+// the server's unfiltered ones.
 const WEIGHTS = {
   'not-started': 0,
-  learning: 0.34,
-  comfortable: 0.67,
+  learning: 1 / 3,
+  comfortable: 2 / 3,
   strong: 1,
 }
 

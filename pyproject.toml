@@ -17,7 +17,10 @@ skilltracker-mcp = "skilltracker_mcp.__main__:main"
 skilltracker-viewer = "skilltracker_viewer.__main__:main"
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8.0",
+]
 
 [build-system]
 requires = ["hatchling"]

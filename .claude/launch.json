@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "skill-tracker",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "skilltracker-viewer", "--port", "8749"],
+      "port": 8749
+    }
+  ]
+}
