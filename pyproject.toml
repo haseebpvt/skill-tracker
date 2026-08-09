@@ -1,0 +1,41 @@
+[project]
+name = "skill-tracker"
+version = "0.1.0"
+description = "Local-first, git-synced skill tracker: markdown source of truth, MCP server for agents, read-only viewer."
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0",
+    "mcp>=1.2.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "watchdog>=4.0",
+]
+
+[project.scripts]
+skilltracker = "core.cli:main"
+skilltracker-mcp = "skilltracker_mcp.__main__:main"
+skilltracker-viewer = "skilltracker_viewer.__main__:main"
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# The repo layout puts the three Python packages in three different places
+# (see §3 of the handover plan), so map each one onto a flat import name.
+[tool.hatch.build.targets.wheel]
+only-include = [
+    "core",
+    "mcp-server/src/skilltracker_mcp",
+    "viewer/backend/skilltracker_viewer",
+]
+
+# `core` keeps its path; the other two are lifted to top-level import names.
+[tool.hatch.build.targets.wheel.sources]
+"mcp-server/src" = ""
+"viewer/backend" = ""
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

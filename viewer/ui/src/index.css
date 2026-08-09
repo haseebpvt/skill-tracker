@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Focus pulse for topic boxes. Overlaid on top of the status color via a ring. */
+@keyframes focus-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.65);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+  }
+}
+
+.focus-pulse {
+  animation: focus-pulse 1.8s ease-in-out infinite;
+  outline: 2px solid rgba(37, 99, 235, 0.9);
+  outline-offset: 1px;
+}
+
+/* Static fallback when the user prefers reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .focus-pulse {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  }
+}

@@ -1,0 +1,13 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Node / built UI
+node_modules/
+viewer/ui/dist/
+
+# OS
+.DS_Store
