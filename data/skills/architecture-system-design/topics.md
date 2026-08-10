@@ -1,7 +1,7 @@
-<!-- Topics for Databases & Data Layer. See MASTER.md for the format. -->
+<!-- Topics for Architecture & System Design. See MASTER.md for the format. -->
 
-## SQL engineering
-- id: sql-engineering
+## Python design patterns
+- id: design-patterns
 - status: not-started
 - priority: 1
 - min_required: true
@@ -10,14 +10,14 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- ACID/MVCC, indexes, isolation, EXPLAIN, CTEs/windows, N+1, SQLAlchemy/asyncpg safely
+- Implement strategy, decorator, DI, context manager, repository/service, retry, circuit breaker
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Redis & document/graph stores
-- id: nosql-stores
+## Distributed system principles
+- id: system-architecture
 - status: not-started
 - priority: 2
 - min_required: true
@@ -26,14 +26,14 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- Redis cache/locks; Mongo schema/index basics; Neo4j/KG awareness for Graph RAG
+- Trade off monolith/microservices/events; CAP, scaling, caching, queues, consistency
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Vector databases & pipelines
-- id: vector-databases
+## API design for GenAI
+- id: api-design
 - status: not-started
 - priority: 3
 - min_required: true
@@ -42,8 +42,7 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- Hands-on with 2 of Qdrant/Chroma/pgvector; hybrid search + metadata schema
-- Batch embedding / incremental indexing awareness
+- REST + pagination/versioning/rate limits/auth; SSE/WebSockets for LLM streaming
 
 ### Notes / log
 - 2026-08-09: topic added

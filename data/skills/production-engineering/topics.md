@@ -1,7 +1,7 @@
-<!-- Topics for Databases & Data Layer. See MASTER.md for the format. -->
+<!-- Topics for Production Engineering & Security. See MASTER.md for the format. -->
 
-## SQL engineering
-- id: sql-engineering
+## Observability & LLM observability
+- id: observability
 - status: not-started
 - priority: 1
 - min_required: true
@@ -10,14 +10,15 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- ACID/MVCC, indexes, isolation, EXPLAIN, CTEs/windows, N+1, SQLAlchemy/asyncpg safely
+- Logs/metrics/traces, RED/golden signals, OpenTelemetry basics
+- Track tokens, TTFT, cost, prompt logs, RAG provenance
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Redis & document/graph stores
-- id: nosql-stores
+## App + LLM security
+- id: security
 - status: not-started
 - priority: 2
 - min_required: true
@@ -26,14 +27,14 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- Redis cache/locks; Mongo schema/index basics; Neo4j/KG awareness for Graph RAG
+- OWASP Top 10, OAuth2/JWT, secrets; OWASP LLM Top 10, prompt injection, PII redaction
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Vector databases & pipelines
-- id: vector-databases
+## Reliability & performance
+- id: reliability-performance
 - status: not-started
 - priority: 3
 - min_required: true
@@ -42,8 +43,8 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- Hands-on with 2 of Qdrant/Chroma/pgvector; hybrid search + metadata schema
-- Batch embedding / incremental indexing awareness
+- Circuit breaker, retry+jitter, timeouts, idempotency, rate limits, health checks
+- Profile hotspots; reason about P95/P99 and simple load tests
 
 ### Notes / log
 - 2026-08-09: topic added

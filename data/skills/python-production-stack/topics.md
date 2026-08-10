@@ -1,7 +1,7 @@
-<!-- Topics for Databases & Data Layer. See MASTER.md for the format. -->
+<!-- Topics for Python Production Stack. See MASTER.md for the format. -->
 
-## SQL engineering
-- id: sql-engineering
+## Pydantic v2
+- id: pydantic-v2
 - status: not-started
 - priority: 1
 - min_required: true
@@ -10,14 +10,15 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- ACID/MVCC, indexes, isolation, EXPLAIN, CTEs/windows, N+1, SQLAlchemy/asyncpg safely
+- Use BaseModel, validators, discriminated unions, BaseSettings
+- Produce tool schemas via model_json_schema()
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Redis & document/graph stores
-- id: nosql-stores
+## FastAPI core & DI
+- id: fastapi-core
 - status: not-started
 - priority: 2
 - min_required: true
@@ -26,14 +27,14 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- Redis cache/locks; Mongo schema/index basics; Neo4j/KG awareness for Graph RAG
+- Routes, validation, Depends (incl. yield), middleware/CORS
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Vector databases & pipelines
-- id: vector-databases
+## FastAPI streaming, auth & clients
+- id: fastapi-streaming-auth
 - status: not-started
 - priority: 3
 - min_required: true
@@ -42,8 +43,8 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- Hands-on with 2 of Qdrant/Chroma/pgvector; hybrid search + metadata schema
-- Batch embedding / incremental indexing awareness
+- Stream LLM tokens via SSE; JWT/API-key auth; lifespan; TestClient
+- Use httpx + tenacity for resilient async HTTP
 
 ### Notes / log
 - 2026-08-09: topic added

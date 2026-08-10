@@ -1,7 +1,7 @@
-<!-- Topics for Data Structures & Algorithms. See MASTER.md for the format. -->
+<!-- Topics for RAG Systems. See MASTER.md for the format. -->
 
-## Arrays, strings & hash tables
-- id: arrays-hash-tables
+## Ingestion, chunking & embeddings
+- id: rag-ingestion
 - status: not-started
 - priority: 1
 - min_required: true
@@ -10,14 +10,15 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- Solve two-pointer, sliding window, prefix sum, Kadane, frequency, N-Sum in ~20–25 min
+- Parse docs, choose chunking, extract metadata
+- Explain dense vs sparse embeddings and pick a model
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Stacks, queues, heaps & linked lists
-- id: stacks-queues-heaps-lists
+## Vector indexes & hybrid search
+- id: rag-search
 - status: not-started
 - priority: 2
 - min_required: true
@@ -26,14 +27,15 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- Monotonic stack, deque/heapq Top-K, linked-list fast/slow + LRU
+- Explain HNSW/IVF/quantization and distance metrics
+- Implement semantic + BM25 + RRF hybrid search with metadata filters
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Trees, tries & binary search
-- id: trees-tries-binary-search
+## Reranking, query transforms & generation
+- id: rag-rerank-context
 - status: not-started
 - priority: 3
 - min_required: true
@@ -42,14 +44,15 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- BST traversals, Trie, LCA, binary search (classic + on-answer)
+- Apply rerankers and query transforms (HyDE, multi-query, decomposition)
+- Mitigate lost-in-the-middle; RAG prompts with citations / I-don't-know; stream answers
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Graphs
-- id: graphs
+## RAG evaluation
+- id: rag-evaluation
 - status: not-started
 - priority: 4
 - min_required: true
@@ -58,14 +61,15 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- BFS/DFS, topological sort, cycle detection, Dijkstra, Union-Find
+- Define faithfulness, relevance, context precision/recall, MRR/nDCG
+- Run RAGAS or DeepEval on a small golden set; use LLM-as-a-judge carefully
 
 ### Notes / log
 - 2026-08-09: topic added
 - 2026-08-09: 30-day crunch path; status not-started until demonstrated
 
-## Recursion, DP & greedy
-- id: recursion-dp-greedy
+## Advanced RAG patterns
+- id: advanced-rag-patterns
 - status: not-started
 - priority: 5
 - min_required: true
@@ -74,7 +78,8 @@
 - evidence: [raw/research/one-month-plan.md]
 
 ### What "enough" looks like
-- Backtracking, 1D/2D DP (coin change, LCS, knapsack), greedy intervals
+- Explain CRAG / Self-RAG / Adaptive / RAPTOR / conversational / agentic / Graph RAG
+- Pick a pattern for a concrete retrieval failure mode
 
 ### Notes / log
 - 2026-08-09: topic added

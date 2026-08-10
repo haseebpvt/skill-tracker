@@ -1,12 +1,8 @@
 ---
 id: databases
 name: Databases & Data Layer
-priority: 4
+priority: 8
 updated: 2026-08-09
 ---
 
-The storage layer under an agentic system: relational fundamentals, vector
-stores, and the state/memory persistence that long-running agents need.
-
-Ranked last of the four not because it is unimportant but because the existing
-baseline here is strongest — the marginal value of study time is lower.
+Week 3 days 19–20 (P2). SQL, Redis/Mongo basics, vector DBs hands-on.

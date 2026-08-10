@@ -1,17 +1,26 @@
 ---
-role: Agentic AI Engineer
+role: Senior Python GenAI / RAG / Agentic Engineer
 level: Senior
-updated: 2026-08-09
+updated: 2026-08-10
 skill_order:
-- agentic-frameworks
 - llm-fundamentals
+- rag
+- agentic-systems
+- python-mastery
+- python-production-stack
 - dsa
+- architecture-system-design
 - databases
+- production-engineering
 ---
 
-Target: senior-level roles building production agentic systems — LLM orchestration,
-tool-using agents, retrieval, evaluation, and the backend engineering around them.
+**30-day intensive path** (from `evidence/raw/research/one-month-plan.md`).
 
-Ordering rationale lives in `evidence/CONCLUSIONS.md` and is only changed as a
-deliberate, human-confirmed step (see MASTER.md → Stability rules). The list above
-is the display order in the viewer, most important first.
+Strategy: nail specialization first (LLM / RAG / Agents), then Python + FastAPI,
+then system design / DBs / production. Daily DSA in parallel.
+
+Intentionally deferred for later (add if you get more time): deep K8s, IaC,
+CI/CD specifics, cloud deep-dive, LLMOps/serving, ethics/regulatory, GenAI-specific
+DSA, multimodal deep-dive. See `senior-genai-bare-minimum.md` as the backlog.
+
+Also incorporating `evidence/raw/research/agentic-ai-engineer-study-plan.md` to deepen the Agentic Systems skill (no skill-order change without explicit approval).
