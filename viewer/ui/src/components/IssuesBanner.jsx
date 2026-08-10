@@ -17,7 +17,7 @@ export default function IssuesBanner({ issues }) {
   return (
     <div
       className={`border-b ${
-        hasErrors ? 'border-red-200 bg-red-50' : 'border-amber-200 bg-amber-50'
+        hasErrors ? 'border-danger-line bg-danger-soft' : 'border-warn-line bg-warn-soft'
       }`}
     >
       <div className="mx-auto max-w-[1400px] px-6 py-2.5">
@@ -26,7 +26,7 @@ export default function IssuesBanner({ issues }) {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           className={`flex w-full items-center gap-2 text-left text-sm font-medium ${
-            hasErrors ? 'text-red-900' : 'text-amber-900'
+            hasErrors ? 'text-danger-ink' : 'text-warn-ink'
           }`}
         >
           <span className={`transition-transform ${open ? 'rotate-90' : ''}`}>›</span>
@@ -54,16 +54,16 @@ export default function IssuesBanner({ issues }) {
                   <span
                     className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase ${
                       level === 'error'
-                        ? 'bg-red-200 text-red-900'
-                        : 'bg-amber-200 text-amber-900'
+                        ? 'bg-danger-line text-danger-ink'
+                        : 'bg-warn-line text-warn-ink'
                     }`}
                   >
                     {level}
                   </span>
                   {issue.path ? (
-                    <code className="font-mono text-xs text-slate-700">{issue.path}</code>
+                    <code className="font-mono text-xs text-ink-2">{issue.path}</code>
                   ) : null}
-                  <span className={level === 'error' ? 'text-red-900' : 'text-amber-900'}>
+                  <span className={level === 'error' ? 'text-danger-ink' : 'text-warn-ink'}>
                     {issue.message || 'Unknown issue'}
                   </span>
                 </li>

@@ -33,14 +33,14 @@ export default function App() {
     if (loading) {
       return (
         <Centered>
-          <p className="text-sm text-slate-500">Loading…</p>
+          <p className="text-sm text-ink-3">Loading…</p>
         </Centered>
       )
     }
     return (
       <Centered>
-        <h1 className="text-lg font-semibold text-slate-900">Can't reach the tracker backend</h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <h1 className="text-lg font-semibold text-ink">Can't reach the tracker backend</h1>
+        <p className="mt-2 text-sm text-ink-2">
           The viewer couldn't load <code className="font-mono">/api/state</code>
           {error ? ` (${error})` : ''}. Make sure the local server is running, then this page will
           reconnect on its own.
@@ -70,8 +70,8 @@ export default function App() {
 
       <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 py-6">
         {state.role && state.role.notes_md ? (
-          <details className="mb-5 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <summary className="cursor-pointer text-sm font-medium text-slate-700">
+          <details className="mb-5 rounded-xl border border-line bg-surface px-4 py-3 shadow-sm">
+            <summary className="cursor-pointer text-sm font-medium text-ink-2">
               Role notes
             </summary>
             <div className="mt-1">
@@ -91,8 +91,8 @@ export default function App() {
             ))}
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-            <p className="text-sm text-slate-600">
+          <div className="rounded-xl border border-dashed border-line-strong bg-surface px-6 py-12 text-center">
+            <p className="text-sm text-ink-2">
               {minOnly
                 ? 'No minimum-required topics match the current filter.'
                 : 'No skills defined yet.'}

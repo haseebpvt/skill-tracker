@@ -5,8 +5,8 @@ import StatusPill from './StatusPill.jsx'
 function Meta({ label, children }) {
   return (
     <div>
-      <dt className="text-[11px] font-medium tracking-wide text-slate-500 uppercase">{label}</dt>
-      <dd className="mt-0.5 text-sm text-slate-800">{children}</dd>
+      <dt className="text-[11px] font-medium tracking-wide text-ink-3 uppercase">{label}</dt>
+      <dd className="mt-0.5 text-sm text-ink">{children}</dd>
     </div>
   )
 }
@@ -43,7 +43,7 @@ export default function TopicDrawer({ topic, onClose }) {
   return (
     <div className="fixed inset-0 z-40">
       <div
-        className="absolute inset-0 bg-slate-900/25"
+        className="absolute inset-0 bg-black/60"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -52,25 +52,25 @@ export default function TopicDrawer({ topic, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label={topic.title || 'Topic detail'}
-        className="absolute top-0 right-0 flex h-full w-full max-w-[560px] flex-col border-l border-slate-200 bg-white shadow-xl"
+        className="absolute top-0 right-0 flex h-full w-full max-w-[560px] flex-col border-l border-line bg-surface shadow-xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
           <div className="min-w-0">
             {topic.skill_name ? (
-              <p className="text-xs font-medium text-slate-500">{topic.skill_name}</p>
+              <p className="text-xs font-medium text-ink-3">{topic.skill_name}</p>
             ) : null}
-            <h2 className="mt-0.5 text-lg font-semibold break-words text-slate-900">
+            <h2 className="mt-0.5 text-lg font-semibold break-words text-ink">
               {topic.title || topic.id}
             </h2>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <StatusPill status={topic.status} />
               {topic.min_required ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900">
+                <span className="inline-flex items-center gap-1 rounded-full border border-warn-line bg-warn-soft px-2 py-0.5 text-xs font-medium text-warn-ink">
                   ★ Min required
                 </span>
               ) : null}
               {topic.focus ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-900">
+                <span className="inline-flex items-center gap-1 rounded-full border border-accent-line bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-ink">
                   In focus
                 </span>
               ) : null}
@@ -82,7 +82,7 @@ export default function TopicDrawer({ topic, onClose }) {
             type="button"
             onClick={onClose}
             aria-label="Close panel"
-            className="shrink-0 rounded-md border border-slate-200 px-2 py-1 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="shrink-0 rounded-md border border-line px-2 py-1 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             ✕
           </button>
@@ -95,30 +95,30 @@ export default function TopicDrawer({ topic, onClose }) {
             </Meta>
             <Meta label="Updated">{topic.updated || '—'}</Meta>
             <Meta label="Topic id">
-              <code className="font-mono text-xs break-all text-slate-600">
+              <code className="font-mono text-xs break-all text-ink-2">
                 {topic.id || '—'}
               </code>
             </Meta>
           </dl>
 
           <div className="mt-5">
-            <h3 className="text-[11px] font-medium tracking-wide text-slate-500 uppercase">
+            <h3 className="text-[11px] font-medium tracking-wide text-ink-3 uppercase">
               Evidence
             </h3>
             {evidence.length > 0 ? (
               <ul className="mt-1.5 space-y-1">
                 {evidence.map((path, idx) => (
                   <li key={`${path}-${idx}`}>
-                    <code className="font-mono text-xs break-all text-slate-700">{path}</code>
+                    <code className="font-mono text-xs break-all text-ink-2">{path}</code>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="mt-1 text-sm text-slate-400 italic">No evidence linked.</p>
+              <p className="mt-1 text-sm text-ink-3 italic">No evidence linked.</p>
             )}
           </div>
 
-          <hr className="my-5 border-slate-200" />
+          <hr className="my-5 border-line" />
 
           {hasBody ? (
             <Markdown>{topic.body_md}</Markdown>
@@ -127,7 +127,7 @@ export default function TopicDrawer({ topic, onClose }) {
               {/* Fall back to the individual sections when body_md is absent. */}
               {topic.enough_md ? (
                 <div className="mb-4">
-                  <h3 className="text-sm font-semibold text-slate-900">
+                  <h3 className="text-sm font-semibold text-ink">
                     What enough looks like
                   </h3>
                   <Markdown>{topic.enough_md}</Markdown>
@@ -135,12 +135,12 @@ export default function TopicDrawer({ topic, onClose }) {
               ) : null}
               {topic.log_md ? (
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Notes / log</h3>
+                  <h3 className="text-sm font-semibold text-ink">Notes / log</h3>
                   <Markdown>{topic.log_md}</Markdown>
                 </div>
               ) : null}
               {!topic.enough_md && !topic.log_md ? (
-                <p className="text-sm text-slate-400 italic">No details recorded yet.</p>
+                <p className="text-sm text-ink-3 italic">No details recorded yet.</p>
               ) : null}
             </>
           )}

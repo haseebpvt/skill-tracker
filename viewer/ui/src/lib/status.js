@@ -1,45 +1,48 @@
 // Fixed status -> color mapping. Do not improvise: these four are the contract.
-//   not-started -> gray, learning -> yellow, comfortable -> light green, strong -> saturated green
+//   not-started -> gray, learning -> yellow, comfortable -> light green, strong -> full green
+//
+// Colours come from the semantic tokens in index.css, so the ramp is tuned for
+// the dark theme in exactly one place.
 
 export const STATUSES = ['not-started', 'learning', 'comfortable', 'strong']
 
 export const STATUS_META = {
   'not-started': {
     label: 'Not started',
-    box: 'bg-slate-200 border-slate-300 text-slate-700 hover:bg-slate-300',
-    swatch: 'bg-slate-200 border-slate-300',
-    pill: 'bg-slate-100 text-slate-700 border-slate-300',
-    bar: 'bg-slate-400',
+    box: 'bg-st-none border-st-none-line text-st-none-ink hover:bg-surface-3',
+    swatch: 'bg-st-none border-st-none-line',
+    pill: 'bg-st-none text-st-none-ink border-st-none-line',
+    bar: 'bg-st-none-line',
   },
   learning: {
     label: 'Learning',
-    box: 'bg-amber-200 border-amber-300 text-amber-900 hover:bg-amber-300',
-    swatch: 'bg-amber-200 border-amber-300',
-    pill: 'bg-amber-100 text-amber-900 border-amber-300',
-    bar: 'bg-amber-400',
+    box: 'bg-st-learn border-st-learn-line text-st-learn-ink hover:bg-st-learn-line',
+    swatch: 'bg-st-learn border-st-learn-line',
+    pill: 'bg-st-learn text-st-learn-ink border-st-learn-line',
+    bar: 'bg-st-learn-line',
   },
   comfortable: {
     label: 'Comfortable',
-    box: 'bg-green-200 border-green-300 text-green-900 hover:bg-green-300',
-    swatch: 'bg-green-200 border-green-300',
-    pill: 'bg-green-100 text-green-900 border-green-300',
-    bar: 'bg-green-400',
+    box: 'bg-st-comf border-st-comf-line text-st-comf-ink hover:bg-st-comf-line',
+    swatch: 'bg-st-comf border-st-comf-line',
+    pill: 'bg-st-comf text-st-comf-ink border-st-comf-line',
+    bar: 'bg-st-comf-line',
   },
   strong: {
     label: 'Strong',
-    box: 'bg-green-600 border-green-700 text-white hover:bg-green-700',
-    swatch: 'bg-green-600 border-green-700',
-    pill: 'bg-green-600 text-white border-green-700',
-    bar: 'bg-green-600',
+    box: 'bg-st-strong border-st-strong-line text-st-strong-ink hover:bg-st-strong-line',
+    swatch: 'bg-st-strong border-st-strong-line',
+    pill: 'bg-st-strong text-st-strong-ink border-st-strong-line',
+    bar: 'bg-st-strong',
   },
 }
 
 const FALLBACK = {
   label: 'Unknown',
-  box: 'bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200',
-  swatch: 'bg-slate-100 border-slate-300',
-  pill: 'bg-slate-100 text-slate-600 border-slate-300',
-  bar: 'bg-slate-300',
+  box: 'bg-surface-2 border-line text-ink-3 hover:bg-surface-3',
+  swatch: 'bg-surface-2 border-line',
+  pill: 'bg-surface-2 text-ink-3 border-line',
+  bar: 'bg-line-strong',
 }
 
 // Tolerates null / unexpected statuses rather than throwing.

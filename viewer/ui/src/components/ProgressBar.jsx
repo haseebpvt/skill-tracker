@@ -4,7 +4,7 @@ export default function ProgressBar({ percent, className = '', height = 'h-2', b
   const pct = clampPercent(percent)
   return (
     <div
-      className={`w-full overflow-hidden rounded-full bg-slate-200 ${height} ${className}`}
+      className={`w-full overflow-hidden rounded-full bg-surface-3 ${height} ${className}`}
       role="progressbar"
       aria-valuenow={Math.round(pct)}
       aria-valuemin={0}
@@ -12,7 +12,7 @@ export default function ProgressBar({ percent, className = '', height = 'h-2', b
     >
       <div
         className={`${height} rounded-full transition-[width] duration-500 ${
-          barClass || 'bg-green-600'
+          barClass || 'bg-ok-solid'
         }`}
         style={{ width: `${pct}%` }}
       />

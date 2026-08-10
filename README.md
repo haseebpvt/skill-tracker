@@ -102,11 +102,15 @@ Every file is plain markdown and meant to be read, hand-edited, and diffed. The 
 | Status | Colour in the UI |
 |---|---|
 | `not-started` | grey |
-| `learning` | yellow |
-| `comfortable` | light green |
-| `strong` | full green |
+| `learning` | amber |
+| `comfortable` | deep green |
+| `strong` | bright green |
 
 A pulsing border means `focus: true`. A ★ badge means `min_required: true` — part of the minimum bar for the role, per the evidence.
+
+### Theming
+
+The viewer is dark, always — there is no toggle and no OS-preference sniffing, so it looks the same on every machine. The whole palette is a block of semantic tokens at the top of [`viewer/ui/src/index.css`](viewer/ui/src/index.css) (`--color-surface`, `--color-ink-2`, `--color-st-strong`, …), and components only ever reference those tokens. Retheming — including adding a light mode — means overriding that block, not touching components.
 
 ---
 

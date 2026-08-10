@@ -1,32 +1,110 @@
 @import "tailwindcss";
 
+/*
+ * Semantic colour tokens. Components reference these (bg-surface, text-ink-2,
+ * border-line) rather than raw palette colours, so the theme is defined here
+ * and nowhere else. A light theme would be an override of this block.
+ *
+ * The status ramp must stay legible as an ordering at a glance:
+ *   not-started (grey) → learning (amber) → comfortable (deep green) → strong (bright green)
+ */
+@theme {
+  /* Surfaces, back to front */
+  --color-canvas: #0a0f19;
+  --color-surface: #141b27;
+  --color-surface-2: #1b2430;
+  --color-surface-3: #26313f;
+
+  /* Borders */
+  --color-line: #27313f;
+  --color-line-strong: #384556;
+
+  /* Text, most to least prominent */
+  --color-ink: #e9eef6;
+  --color-ink-2: #a9b6c7;
+  --color-ink-3: #78859a;
+
+  /* Accent — focus, links, the min-bar filter */
+  --color-accent: #3b82f6;
+  --color-accent-solid: #2563eb;
+  --color-accent-soft: #15243d;
+  --color-accent-line: #2f4f80;
+  --color-accent-ink: #a9caf8;
+
+  /* Warning */
+  --color-warn-solid: #d99b28;
+  --color-warn-soft: #2a2011;
+  --color-warn-line: #5d4718;
+  --color-warn-ink: #f3cd82;
+
+  /* Error */
+  --color-danger-solid: #ef4444;
+  --color-danger-soft: #2b1417;
+  --color-danger-line: #6d2831;
+  --color-danger-ink: #f5aab1;
+
+  /* Success — the live-connection chip */
+  --color-ok-solid: #22c55e;
+  --color-ok-soft: #0f2419;
+  --color-ok-line: #205237;
+  --color-ok-ink: #8ce3b1;
+
+  /* Status ramp */
+  --color-st-none: #2b3543;
+  --color-st-none-line: #3b4757;
+  --color-st-none-ink: #aab7c8;
+
+  --color-st-learn: #7c5e10;
+  --color-st-learn-line: #a67f1c;
+  --color-st-learn-ink: #ffeec2;
+
+  --color-st-comf: #1d5137;
+  --color-st-comf-line: #2a6f4b;
+  --color-st-comf-ink: #b8f1d0;
+
+  --color-st-strong: #22a35c;
+  --color-st-strong-line: #2ec06e;
+  --color-st-strong-ink: #04220f;
+}
+
 html,
 body,
 #root {
   height: 100%;
 }
 
+:root {
+  /* Renders native scrollbars, form controls and the like dark. */
+  color-scheme: dark;
+}
+
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-accent-line);
+  color: var(--color-ink);
 }
 
 /* Focus pulse for topic boxes. Overlaid on top of the status color via a ring. */
 @keyframes focus-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.65);
+    box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.7);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.16);
   }
 }
 
 .focus-pulse {
   animation: focus-pulse 1.8s ease-in-out infinite;
-  outline: 2px solid rgba(37, 99, 235, 0.9);
+  outline: 2px solid rgba(96, 165, 250, 0.95);
   outline-offset: 1px;
 }
 
@@ -34,6 +112,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .focus-pulse {
     animation: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
   }
 }

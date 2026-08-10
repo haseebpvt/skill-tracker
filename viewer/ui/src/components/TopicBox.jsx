@@ -22,7 +22,7 @@ export default function TopicBox({ topic, onSelect }) {
       type="button"
       onClick={() => onSelect(topic)}
       title={tooltip}
-      className={`relative flex h-[58px] w-[150px] shrink-0 items-center rounded-lg border px-2.5 py-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+      className={`relative flex h-[58px] w-[150px] shrink-0 items-center rounded-lg border px-2.5 py-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-surface ${
         meta.box
       } ${topic.focus ? 'focus-pulse' : ''}`}
     >
@@ -33,7 +33,7 @@ export default function TopicBox({ topic, onSelect }) {
       {topic.min_required ? (
         <span
           aria-label="minimum required"
-          className="pointer-events-none absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border border-slate-300 bg-white text-[9px] leading-none text-amber-600 shadow-sm"
+          className="pointer-events-none absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border border-line-strong bg-surface text-[9px] leading-none text-warn-solid shadow-sm"
         >
           ★
         </span>
