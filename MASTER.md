@@ -105,6 +105,56 @@ added: 2026-08-09
 <pasted content>
 ```
 
+### `data/roadmap.md` — the plan
+
+Milestones. A milestone **points at** work rather than copying it: it lists skill ids and/or topic ids, and all completion figures are derived from those topics' live statuses. That is why the roadmap can never drift out of sync with actual progress — there is no second copy of the truth to go stale.
+
+```markdown
+---
+updated: 2026-08-10
+start_date: 2026-08-10        # anchors the burn-up chart
+target_date: 2026-09-08       # drives the on-track / behind verdict
+---
+Optional intro prose.
+
+## Week 1 — LLM & RAG foundations
+- id: w1-foundations
+- target: 2026-08-16
+- status: planned              # planned | in-progress | done | blocked
+- skills: [llm-fundamentals, rag]
+- topics: [some-extra-topic]
+
+Why this week matters.
+```
+
+`skills` pulls in every topic in those skills; `topics` adds individual ones. Use `set_milestone` rather than editing this by hand — it rejects unknown ids at write time, so you cannot leave a dangling reference.
+
+A milestone's displayed state is **derived**, not declared:
+
+| Derived | Meaning |
+|---|---|
+| `done` | every topic is comfortable or better |
+| `on-track` | more days remaining than outstanding topics |
+| `at-risk` | fewer days remaining than outstanding topics |
+| `overdue` | the target date has passed and work remains |
+| `blocked` | you set `status: blocked` |
+
+`status: done` is *overruled* if the topics disagree. Declaring victory does not achieve it.
+
+### `data/history.jsonl` — the event log
+
+Append-only, one JSON object per line, written automatically on every progress-affecting write. This is what makes velocity and forecasting possible; the `updated:` field on a topic only says when it last moved, not the shape of the curve.
+
+```json
+{"ts":"2026-08-10T14:32:11Z","type":"status_change","skill_id":"rag","topic_id":"chunking","from":"learning","to":"comfortable","note":"explained the trade-off unprompted"}
+```
+
+Never rewrite or hand-edit this file. Append via the tools. Use `log_activity` to record a study session or blocker that does not justify a status change — it keeps the timeline honest on days where nothing was learned *well enough* to move a status.
+
+### `ROADMAP.md` (repo root) — generated
+
+**Never edit this.** It is regenerated from scratch after every write, and any manual change will be silently destroyed. It exists so that `git log -p ROADMAP.md` becomes a readable record of how progress actually unfolded. If you want to change what it says, change the underlying data.
+
 ### `evidence/CONCLUSIONS.md`
 
 Written only via `write_conclusions`, which regenerates the frontmatter hash manifest automatically. Never hand-edit the manifest. Expected sections:
@@ -166,6 +216,29 @@ Never jump `not-started` → `strong` on a single conversation. If someone claim
 5. `write_conclusions(content)` with the complete document.
 6. Surface contradictions and propose priority changes in chat. Do not apply them.
 
+### "Build me a roadmap" / "am I on track?"
+
+1. `get_roadmap` — milestones with live progress, plus the measured pace and any projection.
+2. To report status, lead with the honest headline: the projected date and whether it beats the target. **If `forecast.available` is false, say so and quote `reason`.** Do not invent a date, and do not soften a bad one.
+3. To change the plan: `set_milestone` (create or update — only the fields you pass change), `remove_milestone`, `set_roadmap_window` for the overall start/target dates.
+
+Shaping a roadmap well:
+
+- **Few, meaningful milestones.** A week or a theme, not one per topic. Five to eight is usually right.
+- **Cover everything.** Topics in no milestone are invisible to the roadmap; the validator warns when some are uncovered.
+- **Target dates are a commitment, not a guess.** Ask the human for their real availability before laying out dates. Proposing a plan they cannot hit produces a wall of red and makes the whole tool worth ignoring.
+- **Re-cut rather than slip silently.** When a milestone goes `overdue`, say so plainly and propose a new shape. Do not quietly push the date.
+
+### "How fast am I going?"
+
+`get_progress_history` returns the event log and the measured pace together. Read the guards before repeating any number:
+
+- Fewer than 3 status changes in the window → **no projection**.
+- All changes on fewer than 3 distinct days → **no projection**, because one productive afternoon is not a weekly rate.
+- `confidence` is `low` / `medium` / `high` from sample size. Say which. A low-confidence date is a conversation starter, not a plan.
+
+The honest framing is "at your recent pace, X — but that is based on N days of data", never "you will finish on X".
+
 ### "Add a topic / skill"
 
 - `add_topic` — always supply `enough`: concrete, checkable criteria. Vague criteria make every future status judgement arbitrary.
@@ -193,6 +266,8 @@ These exist because a tracker that reshuffles itself every week is useless for t
 
 6. **Never inflate a status to be encouraging.** The human is using this to decide what to study before interviews. A wrong `strong` costs them an interview.
 
+7. **Never inflate a forecast either.** The projection is arithmetic on recorded events, not encouragement. If the data says behind, say behind. If there is not enough data, say that instead of guessing — the tooling deliberately refuses to project, and you should not talk around it.
+
 ---
 
 ## 6. What not to do
@@ -201,5 +276,6 @@ These exist because a tracker that reshuffles itself every week is useless for t
 - Do not add API keys, LLM calls, or network requests to this repo.
 - Do not write to the viewer, or add write endpoints to it. It is read-only by design.
 - Do not edit `evidence/CONCLUSIONS.md` frontmatter by hand — the hash manifest is generated.
+- Do not edit `ROADMAP.md` or `data/history.jsonl` — one is generated, the other is append-only.
 - Do not invent evidence. If a conclusion is your inference rather than something a source said, label it as such.
 - Do not mark something `min_required: true` unless the evidence actually supports it. The minimum bar is a claim about the market, not a wish list.

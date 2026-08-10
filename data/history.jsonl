@@ -1,0 +1,6 @@
+{"ts": "2026-08-10T09:45:20Z", "type": "milestone_set", "note": "roadmap window updated", "data": {"start_date": "2026-08-10", "target_date": "2026-09-08"}}
+{"ts": "2026-08-10T09:45:20Z", "type": "milestone_set", "note": "created milestone 'Week 1 — Your differentiator: LLM & RAG'", "data": {"milestone_id": "w1-specialisation", "created": true, "target": "2026-08-16"}}
+{"ts": "2026-08-10T09:45:20Z", "type": "milestone_set", "note": "created milestone 'Week 2 — Python mastery & production stack'", "data": {"milestone_id": "w2-python-stack", "created": true, "target": "2026-08-23"}}
+{"ts": "2026-08-10T09:45:20Z", "type": "milestone_set", "note": "created milestone 'Week 3 — Agents, system design & data layer'", "data": {"milestone_id": "w3-agents-design", "created": true, "target": "2026-08-30"}}
+{"ts": "2026-08-10T09:45:20Z", "type": "milestone_set", "note": "created milestone 'Week 4 — Production, security & review'", "data": {"milestone_id": "w4-production", "created": true, "target": "2026-09-08"}}
+{"ts": "2026-08-10T09:45:20Z", "type": "milestone_set", "note": "created milestone 'Daily — DSA in parallel'", "data": {"milestone_id": "dsa-daily", "created": true, "target": "2026-09-08"}}

@@ -27,11 +27,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from .markdown import format_scalar, parse_scalar
+from .blocks import Block, render_block, split_blocks
 from .models import TOPIC_META_KEYS, Issue, Topic, slugify
-
-_HEADING_RE = re.compile(r"^##[ \t]+(?!#)(.+?)[ \t]*$")
-_META_RE = re.compile(r"^-[ \t]+([A-Za-z_][A-Za-z0-9_-]*)[ \t]*:[ \t]?(.*)$")
 
 _BOOL_KEYS = ("min_required", "focus")
 
@@ -48,44 +45,22 @@ class TopicFile:
 def parse_topics(text: str, *, path: str = "topics.md", skill_id: str = "") -> tuple[TopicFile, list[Issue]]:
     """Parse a topics file into topics plus any issues found."""
     issues: list[Issue] = []
-    lines = text.splitlines()
+    preamble, blocks = split_blocks(text)
+    parsed = TopicFile(path=path, preamble=preamble)
 
-    # Find every ## heading; everything before the first one is preamble.
-    heading_indexes = [i for i, line in enumerate(lines) if _HEADING_RE.match(line)]
-    preamble_end = heading_indexes[0] if heading_indexes else len(lines)
-    parsed = TopicFile(path=path, preamble="\n".join(lines[:preamble_end]).strip("\n"))
-
-    for position, start in enumerate(heading_indexes):
-        end = heading_indexes[position + 1] if position + 1 < len(heading_indexes) else len(lines)
-        title = _HEADING_RE.match(lines[start]).group(1).strip()
-        topic, topic_issues = _parse_one(title, lines[start + 1 : end], path=path, skill_id=skill_id)
+    for block in blocks:
+        topic, topic_issues = _parse_one(block, path=path, skill_id=skill_id)
         parsed.topics.append(topic)
         issues.extend(topic_issues)
 
     return parsed, issues
 
 
-def _parse_one(title: str, lines: list[str], *, path: str, skill_id: str) -> tuple[Topic, list[Issue]]:
-    issues: list[Issue] = []
-
-    cursor = 0
-    while cursor < len(lines) and not lines[cursor].strip():
-        cursor += 1
-
-    meta: dict[str, object] = {}
-    saw_meta = False
-    while cursor < len(lines):
-        match = _META_RE.match(lines[cursor])
-        if not match:
-            break
-        saw_meta = True
-        key, raw = match.group(1), match.group(2)
-        if key in meta:
-            issues.append(Issue("warning", f"topic '{title}': duplicate meta key '{key}'", path))
-        meta[key] = parse_scalar(raw)
-        cursor += 1
-
-    body = "\n".join(lines[cursor:]).strip("\n")
+def _parse_one(block: Block, *, path: str, skill_id: str) -> tuple[Topic, list[Issue]]:
+    title, meta, body, saw_meta = block.title, dict(block.meta), block.body, block.saw_meta
+    issues: list[Issue] = [
+        Issue("warning", f"topic '{title}': duplicate meta key '{key}'", path) for key in block.duplicate_keys
+    ]
 
     if not saw_meta:
         issues.append(
@@ -164,32 +139,18 @@ def serialize_topics(parsed: TopicFile) -> str:
 
 def serialize_topic(topic: Topic) -> str:
     """Render a single topic section (heading + meta block + body)."""
-    values = {
+    meta = {
         "id": topic.id,
         "status": topic.status,
         "priority": topic.priority,
         "min_required": topic.min_required,
         "focus": topic.focus,
-        "updated": topic.updated,
+        # render_block drops None and empty lists, so these vanish when unset.
+        "updated": topic.updated or None,
         "evidence": topic.evidence,
+        **topic.extra,
     }
-
-    meta_lines = []
-    for key in TOPIC_META_KEYS:
-        value = values[key]
-        if key == "evidence" and not value:
-            continue
-        if key == "updated" and not value:
-            continue
-        meta_lines.append(f"- {key}: {format_scalar(value)}")
-    for key, value in topic.extra.items():
-        meta_lines.append(f"- {key}: {format_scalar(value)}")
-
-    section = f"## {topic.title}\n" + "\n".join(meta_lines)
-    body = topic.body.strip("\n")
-    if body:
-        section += "\n\n" + body
-    return section
+    return render_block(topic.title, meta, topic.body, order=TOPIC_META_KEYS)
 
 
 def append_log_entry(topic: Topic, note: str, *, date: str) -> None:

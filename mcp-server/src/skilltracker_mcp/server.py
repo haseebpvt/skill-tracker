@@ -33,6 +33,10 @@ Two rules that are easy to get wrong:
     Probe first against the topic's "what enough looks like" criteria.
   - Do not reorder skill or topic priorities on your own. Propose; let the human
     approve; only then call update_role_order.
+
+Every write records a timestamped event in data/history.jsonl and regenerates
+ROADMAP.md automatically. You never need to update the roadmap document by hand;
+you only maintain the plan (milestones) via set_milestone.
 """
 
 server = MCPServer(
@@ -332,6 +336,126 @@ def update_role_order(
     skill_order: Annotated[list[str], Field(description="Skill ids, most important first")],
 ) -> dict[str, Any]:
     return _guard(_repo().update_role_order, skill_order)
+
+
+# ----------------------------------------------------------------------
+# Roadmap
+# ----------------------------------------------------------------------
+
+
+@server.tool(
+    description=(
+        "The roadmap with live progress: every milestone, its target date, the topics it covers, how many "
+        "are done, and a schedule verdict (done / on-track / at-risk / overdue / blocked). Also returns the "
+        "measured pace and, when there is enough history, a projected completion date.\n\n"
+        "Milestone completion is DERIVED from topic statuses — it is never stored — so it cannot drift. "
+        "Read this before proposing roadmap changes. See MASTER.md → roadmap workflow."
+    )
+)
+def get_roadmap() -> dict[str, Any]:
+    state = _repo().load()
+    return {
+        "roadmap": state.roadmap_view(),
+        "velocity": state.velocity_view(),
+        "summary": state.summary(),
+    }
+
+
+@server.tool(
+    description=(
+        "Create or update one milestone in data/roadmap.md. Only the fields you pass are changed, so you can "
+        "retarget a date without restating its topics.\n\n"
+        "A milestone points at work rather than copying it: give it `skills` (every topic in those skills) "
+        "and/or `topics` (specific topic ids). Unknown ids are rejected at write time. Progress and the "
+        "on-track verdict are then computed from the live topic statuses.\n\n"
+        "Keep milestones few and meaningful — a week or a theme, not one per topic. Setting target dates is a "
+        "planning decision: propose the shape to the human before laying out a whole roadmap. "
+        "See MASTER.md → roadmap workflow."
+    )
+)
+def set_milestone(
+    milestone_id: Annotated[str, Field(description="Stable kebab-case id, e.g. 'w1-foundations'")],
+    title: Annotated[
+        str | None, Field(description="Display title. Required when creating; optional when updating.")
+    ] = None,
+    target: Annotated[str | None, Field(description="Target date as YYYY-MM-DD. Pass '' to clear.")] = None,
+    status: Annotated[
+        Literal["planned", "in-progress", "done", "blocked"] | None,
+        Field(description="Declared state. 'blocked' is respected; completion is otherwise derived."),
+    ] = None,
+    skills: Annotated[
+        list[str] | None, Field(description="Skill ids whose every topic belongs to this milestone")
+    ] = None,
+    topics: Annotated[list[str] | None, Field(description="Individual topic ids to include")] = None,
+    description: Annotated[str | None, Field(description="Markdown: what this milestone is for")] = None,
+) -> dict[str, Any]:
+    return _guard(
+        _repo().set_milestone,
+        milestone_id,
+        title=title,
+        target=target,
+        status=status,
+        skills=skills,
+        topics=topics,
+        description=description,
+    )
+
+
+@server.tool(
+    description=(
+        "Set the roadmap's overall window and intro prose. start_date anchors the burn-up chart and "
+        "target_date drives the 'on track vs behind' verdict and the required-pace figure. "
+        "Confirm dates with the human rather than inventing them. See MASTER.md → roadmap workflow."
+    )
+)
+def set_roadmap_window(
+    start_date: Annotated[str | None, Field(description="YYYY-MM-DD the plan starts from")] = None,
+    target_date: Annotated[str | None, Field(description="YYYY-MM-DD everything should be done by")] = None,
+    notes: Annotated[str | None, Field(description="Markdown intro shown above the milestones")] = None,
+) -> dict[str, Any]:
+    return _guard(_repo().set_roadmap_meta, start_date=start_date, target_date=target_date, notes=notes)
+
+
+@server.tool(description="Delete a milestone from the roadmap. See MASTER.md for workflow rules.")
+def remove_milestone(
+    milestone_id: Annotated[str, Field(description="The milestone id to remove")],
+) -> dict[str, Any]:
+    return _guard(_repo().remove_milestone, milestone_id)
+
+
+@server.tool(
+    description=(
+        "The timestamped event log behind the velocity figures: status changes, topics and skills added, "
+        "focus changes, milestone edits and free-text notes. Use it to answer 'how fast am I going', 'what "
+        "did I do last week', or to sanity-check a forecast before repeating it to the human.\n\n"
+        "Returns the measured pace alongside the events. If the forecast is unavailable, `reason` says why — "
+        "relay that rather than guessing a date."
+    )
+)
+def get_progress_history(
+    limit: Annotated[int, Field(description="How many of the most recent events to return", ge=1, le=500)] = 50,
+) -> dict[str, Any]:
+    state = _repo().load()
+    return {
+        "history": state.history_view(limit=limit),
+        "velocity": state.velocity_view(),
+    }
+
+
+@server.tool(
+    description=(
+        "Record a dated note in the history without changing any status — study sessions, blockers, "
+        "observations, mock-interview results. This is how the timeline stays meaningful on days where "
+        "nothing was learned well enough to justify a status change.\n\n"
+        "Do NOT use this as a substitute for update_topic_status when a status genuinely moved."
+    )
+)
+def log_activity(
+    note: Annotated[str, Field(description="What happened, in one line")],
+    skill_id: Annotated[str, Field(description="Optional skill this relates to")] = "",
+    topic_id: Annotated[str, Field(description="Optional topic this relates to")] = "",
+) -> dict[str, Any]:
+    return _guard(_repo().log_activity, note, skill_id=skill_id, topic_id=topic_id)
 
 
 def main() -> None:

@@ -5,6 +5,7 @@ import FocusStrip from './components/FocusStrip.jsx'
 import SkillRow from './components/SkillRow.jsx'
 import TopicDrawer from './components/TopicDrawer.jsx'
 import Conclusions from './components/Conclusions.jsx'
+import Roadmap from './components/Roadmap.jsx'
 import Legend from './components/Legend.jsx'
 import Markdown from './components/Markdown.jsx'
 import { useSkillState } from './lib/useSkillState.js'
@@ -27,6 +28,21 @@ export default function App() {
 
   const closeDrawer = useCallback(() => setSelected(null), [])
   const toggleMinOnly = useCallback(() => setMinOnly((v) => !v), [])
+
+  // Milestone chips carry a trimmed topic shape (no body_md / enough_md), so
+  // resolve back to the full topic by id before opening the drawer.
+  const topicsById = useMemo(() => {
+    const index = new Map()
+    for (const skill of state?.skills || []) {
+      for (const topic of skill.topics || []) index.set(topic.id, topic)
+    }
+    return index
+  }, [state])
+
+  const selectTopic = useCallback(
+    (topic) => setSelected((topic && topicsById.get(topic.id)) || topic),
+    [topicsById]
+  )
 
   // Backend unreachable and nothing cached — show a readable error, not a blank page.
   if (!state) {
@@ -66,9 +82,18 @@ export default function App() {
         generatedAt={state.generated_at}
       />
 
-      <FocusStrip focus={view.focus} onSelect={setSelected} />
+      <FocusStrip focus={view.focus} onSelect={selectTopic} />
 
       <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 py-6">
+        <div className="mb-5">
+          <Roadmap
+            roadmap={state.roadmap}
+            velocity={state.velocity}
+            history={state.history}
+            onSelectTopic={selectTopic}
+          />
+        </div>
+
         {state.role && state.role.notes_md ? (
           <details className="mb-5 rounded-xl border border-line bg-surface px-4 py-3 shadow-sm">
             <summary className="cursor-pointer text-sm font-medium text-ink-2">
@@ -86,7 +111,7 @@ export default function App() {
               <SkillRow
                 key={skill.id || idx}
                 skill={skill}
-                onSelectTopic={setSelected}
+                onSelectTopic={selectTopic}
               />
             ))}
           </div>

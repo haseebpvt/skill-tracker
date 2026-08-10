@@ -9,12 +9,17 @@ from __future__ import annotations
 import os
 import tempfile
 from dataclasses import dataclass, field
+from datetime import date as _date
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
 from . import evidence as evidence_mod
+from . import history as history_mod
+from . import roadmap as roadmap_mod
+from . import velocity as velocity_mod
 from .git import git_status
+from .history import Event, utc_now
 from .markdown import ParseError, join_frontmatter, split_frontmatter, today
 from .models import (
     STATUS_WEIGHTS,
@@ -28,7 +33,12 @@ from .models import (
     slugify,
 )
 from .paths import find_repo_root, relative_to_root, safe_path
+from .render import render_roadmap_doc
+from .roadmap import Milestone, Roadmap
 from .topics import TopicFile, append_log_entry, parse_topics, serialize_topics
+
+#: The generated status report at the repo root (see core/render.py).
+ROADMAP_DOC = "ROADMAP.md"
 
 DATA_DIR = "data"
 SKILLS_DIR = "data/skills"
@@ -50,6 +60,8 @@ class State:
     skills: list[Skill] = field(default_factory=list)
     evidence: list[EvidenceFile] = field(default_factory=list)
     conclusions: Conclusions = field(default_factory=Conclusions)
+    roadmap: Roadmap = field(default_factory=Roadmap)
+    events: list[Event] = field(default_factory=list)
     issues: list[Issue] = field(default_factory=list)
 
     # ---- derived views -------------------------------------------------
@@ -82,6 +94,34 @@ class State:
     def evidence_status(self) -> dict[str, list[str]]:
         return evidence_mod.evidence_status(self.evidence, self.conclusions)
 
+    def roadmap_view(self, *, today: _date | None = None) -> dict[str, Any]:
+        return roadmap_mod.derive_roadmap(self.roadmap, self.all_topics, today=today or _date.today())
+
+    def velocity_view(self, *, today: _date | None = None) -> dict[str, Any]:
+        return velocity_mod.compute(
+            self.events,
+            self.all_topics,
+            today=today or _date.today(),
+            target_date=self.roadmap.target_date,
+            start_date=self.roadmap.start_date,
+        )
+
+    def history_view(self, limit: int = 40) -> dict[str, Any]:
+        """Recent events, enriched with the titles the UI wants to display."""
+        topics = {t.id: t for t in self.all_topics}
+        skills = {s.id: s for s in self.skills}
+
+        recent = []
+        for event in reversed(self.events[-limit:]):
+            payload = event.to_dict()
+            topic = topics.get(event.topic_id)
+            skill = skills.get(event.skill_id)
+            payload["topic_title"] = topic.title if topic else event.topic_id
+            payload["skill_name"] = skill.name if skill else event.skill_id
+            recent.append(payload)
+
+        return {"total_events": len(self.events), "recent": recent}
+
     def to_dict(self) -> dict[str, Any]:
         """The full JSON payload served at ``/api/state`` and pushed over SSE."""
         return {
@@ -93,6 +133,9 @@ class State:
             "conclusions": self.conclusions.to_dict(),
             "evidence_status": self.evidence_status(),
             "evidence_files": [item.to_dict() for item in self.evidence],
+            "roadmap": self.roadmap_view(),
+            "velocity": self.velocity_view(),
+            "history": self.history_view(),
             "git": git_status(self.root),
             "issues": [issue.to_dict() for issue in self.issues],
         }
@@ -127,6 +170,17 @@ class Repo:
         conclusions, conclusion_issues = evidence_mod.load_conclusions(self.root)
         state.conclusions = conclusions
         state.issues.extend(conclusion_issues)
+
+        plan, roadmap_issues = roadmap_mod.load_roadmap(self.root)
+        state.roadmap = plan
+        state.issues.extend(roadmap_issues)
+        state.issues.extend(
+            roadmap_mod.validate_roadmap(plan, state.all_topics, [s.id for s in state.skills])
+        )
+
+        events, history_issues = history_mod.read_events(self.root)
+        state.events = events
+        state.issues.extend(history_issues)
 
         # Cross-file checks live in validate.py to keep loading dumb.
         from .validate import cross_check
@@ -269,6 +323,22 @@ class Repo:
             Path(handle.name).unlink(missing_ok=True)
             raise
 
+    def _commit(self, *events: Event) -> None:
+        """Record events, then regenerate ROADMAP.md.
+
+        Every write path ends here, which is what guarantees the generated
+        roadmap can never be stale relative to the data.
+        """
+        history_mod.append_events(self.root, events)
+        self.refresh_roadmap_doc()
+
+    def refresh_roadmap_doc(self) -> str:
+        """Rewrite the generated ``ROADMAP.md`` from current state."""
+        state = self.load()
+        text = render_roadmap_doc(state.to_dict(), state.events, today=_date.today())
+        self._write(self.root / ROADMAP_DOC, text)
+        return ROADMAP_DOC
+
     def _skill_folder(self, skill_id: str) -> Path:
         folder = safe_path(self.root, SKILLS_DIR, skill_id)
         if not folder.is_dir():
@@ -319,6 +389,17 @@ class Repo:
 
             self._write(self.root / parsed.path, serialize_topics(parsed))
             self._touch_skill(folder)
+            self._commit(
+                Event(
+                    ts=utc_now(),
+                    type=history_mod.STATUS_CHANGE,
+                    skill_id=skill_id,
+                    topic_id=topic_id,
+                    from_status=previous,
+                    to_status=status,
+                    note=note.strip() if note else "",
+                )
+            )
             return {
                 "skill_id": skill_id,
                 "topic_id": topic_id,
@@ -401,6 +482,17 @@ class Repo:
 
         self._write(self.root / target.path, serialize_topics(target))
         self._touch_skill(folder)
+        self._commit(
+            Event(
+                ts=utc_now(),
+                type=history_mod.TOPIC_ADDED,
+                skill_id=skill_id,
+                topic_id=new_id,
+                to_status=status,
+                note=notes.strip(),
+                data={"title": title, "min_required": min_required},
+            )
+        )
         return {"skill_id": skill_id, "topic_id": new_id, "file": target.path, "priority": priority}
 
     def set_focus(self, targets: Iterable[tuple[str, str]], *, clear_existing: bool = True) -> dict[str, Any]:
@@ -439,7 +531,15 @@ class Repo:
                 if changed:
                     self._write(self.root / parsed.path, serialize_topics(parsed))
 
-        return {"focused": sorted(set(now_focused)), "cleared": sorted(set(cleared))}
+        focused = sorted(set(now_focused))
+        self._commit(
+            Event(
+                ts=utc_now(),
+                type=history_mod.FOCUS_SET,
+                data={"focused": focused, "cleared": sorted(set(cleared))},
+            )
+        )
+        return {"focused": focused, "cleared": sorted(set(cleared))}
 
     # -- skills / role ---------------------------------------------------
 
@@ -477,6 +577,14 @@ class Repo:
 
         self.update_role_order(order)
         self._renumber_skill_priorities(order)
+        self._commit(
+            Event(
+                ts=utc_now(),
+                type=history_mod.SKILL_ADDED,
+                skill_id=skill_id,
+                data={"name": name, "priority": priority},
+            )
+        )
         return {"skill_id": skill_id, "priority": priority, "skill_order": order}
 
     def update_role_order(self, skill_order: list[str]) -> dict[str, Any]:
@@ -500,6 +608,8 @@ class Repo:
         meta["updated"] = today()
         self._write(path, join_frontmatter(meta, body))
         self._renumber_skill_priorities(order)
+        # Reordering changes how the generated roadmap reads, so refresh it.
+        self.refresh_roadmap_doc()
         return {"skill_order": order, "appended_missing": missing}
 
     def _renumber_skill_priorities(self, order: list[str]) -> None:
@@ -517,6 +627,162 @@ class Repo:
             meta["priority"] = index
             meta["updated"] = today()
             self._write(meta_path, join_frontmatter(meta, body))
+
+    # -- roadmap ---------------------------------------------------------
+
+    def _write_roadmap(self, plan: Roadmap) -> None:
+        plan.updated = today()
+        self._write(self.root / roadmap_mod.ROADMAP_FILE, roadmap_mod.serialize_roadmap(plan))
+
+    def set_roadmap_meta(
+        self,
+        *,
+        start_date: str | None = None,
+        target_date: str | None = None,
+        notes: str | None = None,
+    ) -> dict[str, Any]:
+        """Set the roadmap's overall window and intro prose."""
+        plan, _ = roadmap_mod.load_roadmap(self.root)
+        plan.exists = True
+
+        for label, value in (("start_date", start_date), ("target_date", target_date)):
+            if value is not None:
+                if value and not roadmap_mod._parse_date(value):
+                    raise RepoError(f"{label} '{value}' is not a YYYY-MM-DD date")
+                setattr(plan, label, value or None)
+
+        if notes is not None:
+            plan.notes = notes.strip("\n")
+
+        self._write_roadmap(plan)
+        self._commit(
+            Event(
+                ts=utc_now(),
+                type=history_mod.MILESTONE_SET,
+                note="roadmap window updated",
+                data={"start_date": plan.start_date, "target_date": plan.target_date},
+            )
+        )
+        return {"start_date": plan.start_date, "target_date": plan.target_date, "milestones": len(plan.milestones)}
+
+    def set_milestone(
+        self,
+        milestone_id: str,
+        *,
+        title: str | None = None,
+        target: str | None = None,
+        status: str | None = None,
+        skills: Iterable[str] | None = None,
+        topics: Iterable[str] | None = None,
+        description: str | None = None,
+    ) -> dict[str, Any]:
+        """Create or update one milestone. Only supplied fields are changed."""
+        milestone_id = slugify(milestone_id or title or "")
+        if not milestone_id:
+            raise RepoError("milestone id or title is required")
+
+        plan, _ = roadmap_mod.load_roadmap(self.root)
+        plan.exists = True
+        existing = plan.milestone(milestone_id)
+        created = existing is None
+
+        if created and not title:
+            raise RepoError(f"milestone '{milestone_id}' does not exist yet — supply a title to create it")
+
+        if status is not None and status not in roadmap_mod.MILESTONE_STATUSES:
+            raise RepoError(
+                f"invalid milestone status '{status}'; expected one of {', '.join(roadmap_mod.MILESTONE_STATUSES)}"
+            )
+        if target and not roadmap_mod._parse_date(target):
+            raise RepoError(f"target '{target}' is not a YYYY-MM-DD date")
+
+        # Referencing something that does not exist is a mistake worth catching
+        # at write time rather than leaving as a dangling id in the file.
+        state = self.load()
+        known_topics = {t.id for t in state.all_topics}
+        known_skills = {s.id for s in state.skills}
+        if topics is not None:
+            unknown = sorted(set(topics) - known_topics)
+            if unknown:
+                raise RepoError(f"unknown topic id(s): {', '.join(unknown)}")
+        if skills is not None:
+            unknown = sorted(set(skills) - known_skills)
+            if unknown:
+                raise RepoError(f"unknown skill id(s): {', '.join(unknown)}")
+
+        milestone = existing or Milestone(id=milestone_id, title=title or milestone_id)
+        if title is not None:
+            milestone.title = title
+        if target is not None:
+            milestone.target = target or None
+        if status is not None:
+            milestone.status = status
+        if skills is not None:
+            milestone.skills = [str(s) for s in skills]
+        if topics is not None:
+            milestone.topics = [str(t) for t in topics]
+        if description is not None:
+            milestone.description = description.strip("\n")
+
+        if created:
+            plan.milestones.append(milestone)
+
+        self._write_roadmap(plan)
+        self._commit(
+            Event(
+                ts=utc_now(),
+                type=history_mod.MILESTONE_SET,
+                note=("created" if created else "updated") + f" milestone '{milestone.title}'",
+                data={"milestone_id": milestone_id, "created": created, "target": milestone.target},
+            )
+        )
+
+        derived = roadmap_mod.derive_milestone(milestone, state.all_topics, today=_date.today())
+        return {"milestone_id": milestone_id, "created": created, "milestone": derived}
+
+    def remove_milestone(self, milestone_id: str) -> dict[str, Any]:
+        plan, _ = roadmap_mod.load_roadmap(self.root)
+        milestone = plan.milestone(milestone_id)
+        if milestone is None:
+            known = ", ".join(m.id for m in plan.milestones) or "none"
+            raise RepoError(f"unknown milestone '{milestone_id}'. Known milestones: {known}")
+
+        plan.milestones = [m for m in plan.milestones if m.id != milestone_id]
+        self._write_roadmap(plan)
+        self._commit(
+            Event(
+                ts=utc_now(),
+                type=history_mod.MILESTONE_REMOVED,
+                note=f"removed milestone '{milestone.title}'",
+                data={"milestone_id": milestone_id},
+            )
+        )
+        return {"milestone_id": milestone_id, "remaining": len(plan.milestones)}
+
+    def log_activity(
+        self,
+        note: str,
+        *,
+        skill_id: str = "",
+        topic_id: str = "",
+    ) -> dict[str, Any]:
+        """Record a free-text event without changing any status.
+
+        For study sessions and observations that belong in the timeline but do
+        not, on their own, justify moving a topic's status.
+        """
+        note = note.strip()
+        if not note:
+            raise RepoError("note is required")
+
+        if topic_id:
+            state = self.load()
+            if not any(t.id == topic_id for t in state.all_topics):
+                raise RepoError(f"unknown topic '{topic_id}'")
+
+        event = Event(ts=utc_now(), type=history_mod.NOTE, skill_id=skill_id, topic_id=topic_id, note=note)
+        self._commit(event)
+        return {"logged": event.to_dict()}
 
     # -- evidence --------------------------------------------------------
 
@@ -552,6 +818,13 @@ class Repo:
 
         path = self.root / evidence_mod.EVIDENCE_DIR / evidence_mod.CONCLUSIONS_FILE
         self._write(path, evidence_mod.render_conclusions(content, files, updated=today(), extra=extra))
+        self._commit(
+            Event(
+                ts=utc_now(),
+                type=history_mod.CONCLUSIONS_UPDATED,
+                data={"evidence_files": len(files), "missing_sections": missing},
+            )
+        )
         return {
             "path": f"{evidence_mod.EVIDENCE_DIR}/{evidence_mod.CONCLUSIONS_FILE}",
             "evidence_files_recorded": len(files),

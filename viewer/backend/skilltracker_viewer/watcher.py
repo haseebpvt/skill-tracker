@@ -12,8 +12,10 @@ from watchdog.observers import Observer
 
 logger = logging.getLogger("skilltracker.viewer.watcher")
 
-#: Editors and atomic writes produce a lot of noise; only markdown matters.
-WATCHED_SUFFIXES = (".md",)
+#: Editors and atomic writes produce a lot of noise. Markdown is the data, and
+#: .jsonl is the event log — a logged note with no status change still needs to
+#: reach the UI.
+WATCHED_SUFFIXES = (".md", ".jsonl")
 
 
 class _Handler(FileSystemEventHandler):
