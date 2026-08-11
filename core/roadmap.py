@@ -31,7 +31,7 @@ from typing import Any, Iterable
 
 from .blocks import render_block, split_blocks
 from .markdown import ParseError, join_frontmatter, split_frontmatter
-from .models import MIN_BAR_STATUSES, STATUS_WEIGHTS, STATUSES, Issue, Topic, slugify
+from .models import MIN_BAR_STATUSES, STATUS_WEIGHTS, STATUSES, Issue, Topic, coverage, slugify
 
 ROADMAP_FILE = "data/roadmap.md"
 
@@ -264,6 +264,7 @@ def derive_milestone(
         "topic_ids": list(milestone.topics),
         "missing_topic_ids": missing,
         "progress": {"percent": percent, "total": total, "complete": complete, "counts": counts},
+        "coverage": coverage(topics),
         "topics": [
             {
                 "id": t.id,
@@ -273,6 +274,9 @@ def derive_milestone(
                 "status": t.status,
                 "min_required": t.min_required,
                 "focus": t.focus,
+                "checklist": t.checklist.to_dict(),
+                "needs_breakdown": t.needs_breakdown,
+                "needs_evidence": t.needs_evidence,
             }
             for t in topics
         ],

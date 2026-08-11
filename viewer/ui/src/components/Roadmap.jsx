@@ -106,7 +106,7 @@ function byTargetDate(milestones) {
     .map((x) => x.m)
 }
 
-export default function Roadmap({ roadmap, velocity, history, onSelectTopic }) {
+export default function Roadmap({ roadmap, velocity, history, onSelectTopic, onOpenMilestone }) {
   const [showActivity, setShowActivity] = useState(false)
 
   const exists = !!(roadmap && roadmap.exists)
@@ -199,6 +199,7 @@ export default function Roadmap({ roadmap, velocity, history, onSelectTopic }) {
                 key={milestone.id || `milestone-${idx}`}
                 milestone={milestone}
                 onSelectTopic={onSelectTopic}
+                onOpenMilestone={onOpenMilestone}
               />
             ))}
           </div>

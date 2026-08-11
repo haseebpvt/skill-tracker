@@ -105,6 +105,34 @@ added: 2026-08-09
 <pasted content>
 ```
 
+### Checklists — the granular breakdown inside a topic
+
+A topic says *what* to learn. A checklist says *what to actually do*, in order. Items are ordinary GFM task-list lines in the topic's own body:
+
+```markdown
+### Checklist
+- [x] Explain self-attention (QKV) from memory
+- [ ] Derive why decode is memory-bandwidth bound, prefill compute-bound
+- [ ] Implement a toy attention head in numpy
+```
+
+They can live under any `###` heading and are grouped by it, so an existing section (say "NeetCode problems in this section") becomes a working checklist the moment its bullets get `[ ]`. The checkbox state *is* the file — there is no separate store to fall out of sync.
+
+**Order matters.** Items are presented in file order and the human works top to bottom, so write them in the sequence they should be tackled, each building on the last.
+
+Writing good items — this is the difference between a plan and a wish:
+
+- **Concrete enough that finishing is unambiguous.** "Implement a toy attention head in numpy", not "Understand attention".
+- **One sitting each.** If an item needs a day, split it.
+- **Grounded** in the topic's `What "enough" looks like` criteria and its evidence files. The criteria are the grading contract; the checklist is the route to satisfying them.
+- **5–12 per topic.** An exhaustive list is another way of saying nothing.
+
+Use `add_checklist_items` (safe to re-run — existing items are skipped) and `set_checklist_item`. Find the gaps with `get_coverage_gaps`.
+
+**Ticking boxes is not a status change.** Coverage records work done; status records judged proficiency. A topic at 100% coverage is a strong signal that it is time to *probe* the human — it is not permission to set `comfortable` yourself. The two numbers are reported separately everywhere for exactly this reason.
+
+`needs_breakdown` (no items) and `needs_evidence` (no evidence cited) are surfaced as badges in the viewer and as validator warnings. A min-required topic due this week with neither is the most useful thing you can fix.
+
 ### `data/roadmap.md` — the plan
 
 Milestones. A milestone **points at** work rather than copying it: it lists skill ids and/or topic ids, and all completion figures are derived from those topics' live statuses. That is why the roadmap can never drift out of sync with actual progress — there is no second copy of the truth to go stale.
@@ -239,6 +267,15 @@ Shaping a roadmap well:
 
 The honest framing is "at your recent pace, X — but that is based on N days of data", never "you will finish on X".
 
+### "Break this week down" / "what do I actually do?"
+
+1. `get_coverage_gaps` — topics with no checklist, sorted by which milestone is due soonest.
+2. For each, `get_skill` to read its `What "enough" looks like` criteria, and `read_evidence` for anything it cites.
+3. `add_checklist_items` with 5–12 concrete, ordered items derived from those criteria.
+4. If a topic cites no evidence, say so rather than inventing a breakdown from general knowledge. Either find evidence for it or tell the human it is unsourced — a checklist built on nothing is worse than an empty one, because it looks authoritative.
+
+Work milestone by milestone, nearest target first. Do not break down all fifty topics in one go; the human only needs the next week or two to be actionable.
+
 ### "Add a topic / skill"
 
 - `add_topic` — always supply `enough`: concrete, checkable criteria. Vague criteria make every future status judgement arbitrary.
@@ -274,7 +311,7 @@ These exist because a tracker that reshuffles itself every week is useless for t
 
 - Do not run git commands, or offer to commit and push. The human does that.
 - Do not add API keys, LLM calls, or network requests to this repo.
-- Do not write to the viewer, or add write endpoints to it. It is read-only by design.
+- Do not add write endpoints to the viewer. It has exactly one — `POST /api/checklist`, so the human can tick an item they just finished — and that is the whole intended write surface. Everything else goes through MCP.
 - Do not edit `evidence/CONCLUSIONS.md` frontmatter by hand — the hash manifest is generated.
 - Do not edit `ROADMAP.md` or `data/history.jsonl` — one is generated, the other is append-only.
 - Do not invent evidence. If a conclusion is your inference rather than something a source said, label it as such.

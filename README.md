@@ -81,6 +81,26 @@ The agent will push back on status claims rather than accepting them — that is
 
 ---
 
+## Checklists — what to actually do
+
+A topic tells you *what* to learn; its checklist tells you *what to do*, in order. Items are plain GFM task-list lines inside the topic's own markdown:
+
+```markdown
+### Checklist
+- [x] Explain self-attention (QKV) from memory
+- [ ] Implement a toy attention head in numpy
+```
+
+Click a milestone in the viewer and a panel opens listing every topic in that week, each with its items in learning order and a checkbox you can tick. The tick is written straight back into the markdown — the checkbox state *is* the file, so there is no second store to drift.
+
+Two badges flag holes in the plan: **needs breakdown** (a topic with no items — "learn X" with nothing actionable under it) and **evidence needed** (a topic whose criteria nothing in `evidence/` supports). Both show in the viewer and as validator warnings, and `get_coverage_gaps` hands the agent the list sorted by which milestone is due soonest.
+
+Coverage and status are reported as **separate numbers everywhere**, deliberately. Ticking every box records work done; it does not make you `comfortable`. That judgement still goes through the agent probing you.
+
+> **One deliberate exception to the read-only rule.** The viewer has exactly one write endpoint, `POST /api/checklist`, taking one item id and one boolean. Routing "I just finished this problem" through an agent would be worse than useless. Everything else — statuses, topics, milestones, conclusions — is still MCP-only. A test asserts this endpoint is the only non-GET route, so a second cannot appear by accident.
+
+---
+
 ## Roadmap and forecasting
 
 `data/roadmap.md` holds milestones. A milestone **references** topics and skills rather than copying their state, so its progress is derived from live topic statuses and can never drift out of sync with reality. Each one gets a schedule verdict — `on-track`, `at-risk`, `overdue`, `done`, `blocked` — computed from outstanding topics against the target date. Declaring a milestone `done` while its topics say otherwise does not work; the topics win.

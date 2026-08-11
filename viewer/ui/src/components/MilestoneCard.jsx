@@ -69,8 +69,14 @@ function TopicChip({ topic, onSelectTopic }) {
   )
 }
 
-export default function MilestoneCard({ milestone, onSelectTopic }) {
+export default function MilestoneCard({ milestone, onSelectTopic, onOpenMilestone }) {
   if (!milestone) return null
+
+  const openPanel = typeof onOpenMilestone === 'function' ? () => onOpenMilestone(milestone) : undefined
+  const cov = milestone.coverage || {}
+  const covTotal = typeof cov.total === 'number' ? cov.total : 0
+  const covDone = typeof cov.done === 'number' ? cov.done : 0
+  const gaps = typeof cov.topics_needing_breakdown === 'number' ? cov.topics_needing_breakdown : 0
 
   const meta = derivedMeta(milestone.derived_status)
   const progress = milestone.progress || {}
@@ -86,12 +92,25 @@ export default function MilestoneCard({ milestone, onSelectTopic }) {
     <article className="rounded-lg border border-line bg-surface-2 p-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h4 className="truncate text-sm font-semibold text-ink">
-            {milestone.title || milestone.id}
-          </h4>
+          {openPanel ? (
+            <button
+              type="button"
+              onClick={openPanel}
+              title="Open this milestone to see every topic and its checklist"
+              className="max-w-full truncate text-left text-sm font-semibold text-ink underline-offset-4 transition-colors hover:text-accent-ink hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              {milestone.title || milestone.id}
+            </button>
+          ) : (
+            <h4 className="truncate text-sm font-semibold text-ink">
+              {milestone.title || milestone.id}
+            </h4>
+          )}
           <p className="mt-0.5 text-xs text-ink-3">
             {milestone.target ? `Target ${milestone.target}` : 'No target date'}
             {days ? ` · ${days}` : ''}
+            {covTotal > 0 ? ` · ${covDone}/${covTotal} items` : ''}
+            {gaps > 0 ? ` · ${gaps} topic${gaps === 1 ? '' : 's'} not broken down` : ''}
           </p>
         </div>
 

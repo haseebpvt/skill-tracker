@@ -24,3 +24,5 @@ CI/CD specifics, cloud deep-dive, LLMOps/serving, ethics/regulatory, GenAI-speci
 DSA, multimodal deep-dive. See `senior-genai-bare-minimum.md` as the backlog.
 
 Also incorporating `evidence/raw/research/agentic-ai-engineer-study-plan.md` to deepen the Agentic Systems skill (no skill-order change without explicit approval).
+
+Interview rubrics ingested 2026-08-10 (R1–R5). Topic `enough` criteria are now grading contracts for status updates.

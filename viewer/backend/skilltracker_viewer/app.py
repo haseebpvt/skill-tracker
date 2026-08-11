@@ -20,10 +20,21 @@ from typing import Any, AsyncIterator
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
-from core.repo import Repo
+from core.paths import PathEscapeError
+from core.repo import Repo, RepoError
 
 from .watcher import RepoWatcher
+
+
+class ChecklistToggle(BaseModel):
+    """Body of the single write endpoint. Nothing else is settable."""
+
+    skill_id: str = Field(min_length=1)
+    topic_id: str = Field(min_length=1)
+    item_id: str = Field(min_length=1)
+    checked: bool
 
 logger = logging.getLogger("skilltracker.viewer")
 
@@ -148,6 +159,33 @@ def create_app(repo_root: Path | str | None = None) -> FastAPI:
             "ui_built": ui_dist.is_dir(),
             "sse_clients": viewer.broadcaster.client_count,
         }
+
+    @app.post("/api/checklist")
+    async def toggle_checklist_item(payload: ChecklistToggle) -> JSONResponse:
+        """Tick or untick one checklist item.
+
+        THE ONLY WRITE ENDPOINT. The original design made the viewer strictly
+        read-only, with the MCP server as sole writer; ticking a box you just
+        finished is the one interaction where routing through an agent is worse
+        than useless. The surface is kept deliberately tiny: one item, one
+        boolean, no free text, no way to reach any other field. Everything else
+        still goes through MCP.
+        """
+        try:
+            result = await asyncio.to_thread(
+                repo.set_checklist_item,
+                payload.skill_id,
+                payload.topic_id,
+                payload.item_id,
+                payload.checked,
+            )
+        except (RepoError, PathEscapeError) as exc:
+            return JSONResponse(status_code=400, content={"error": str(exc)})
+
+        # The watcher will also fire, but pushing immediately keeps other open
+        # tabs in step without waiting out the debounce.
+        await viewer.refresh_and_publish()
+        return JSONResponse(result)
 
     @app.get("/api/events")
     async def events() -> StreamingResponse:

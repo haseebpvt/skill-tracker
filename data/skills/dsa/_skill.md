@@ -1,8 +1,10 @@
 ---
 id: dsa
-name: Data Structures & Algorithms
+name: DSA (NeetCode)
 priority: 6
-updated: 2026-08-09
+updated: 2026-08-11
 ---
 
-Daily parallel track — 2 problems/day, ~60 over 30 days (P1). Patterns over quantity.
+Daily parallel track: **1 NeetCode problem/day** in roadmap order.
+Pattern topics in the UI; per-problem checklist in `_neetcode-progress.md`.
+Your current list covers #1–#75 (Arrays → Backtracking). Graphs + DP come next.

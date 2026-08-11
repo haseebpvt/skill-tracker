@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import Markdown from './Markdown.jsx'
 import StatusPill from './StatusPill.jsx'
+import Checklist from './Checklist.jsx'
+import { useState } from 'react'
 
 function Meta({ label, children }) {
   return (
@@ -11,8 +13,9 @@ function Meta({ label, children }) {
   )
 }
 
-export default function TopicDrawer({ topic, onClose }) {
+export default function TopicDrawer({ topic, onClose, onToggleItem }) {
   const closeRef = useRef(null)
+  const [busyIds, setBusyIds] = useState(() => new Set())
 
   // Esc to close, and move focus into the panel when it opens.
   useEffect(() => {
@@ -39,6 +42,20 @@ export default function TopicDrawer({ topic, onClose }) {
 
   const evidence = Array.isArray(topic.evidence) ? topic.evidence.filter(Boolean) : []
   const hasBody = !!(topic.body_md && topic.body_md.trim())
+
+  const toggleItem = async (itemId, checked) => {
+    if (typeof onToggleItem !== 'function') return
+    setBusyIds((prev) => new Set(prev).add(itemId))
+    try {
+      await onToggleItem(topic.skill_id, topic.id, itemId, checked)
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev)
+        next.delete(itemId)
+        return next
+      })
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-40">
@@ -116,6 +133,15 @@ export default function TopicDrawer({ topic, onClose }) {
             ) : (
               <p className="mt-1 text-sm text-ink-3 italic">No evidence linked.</p>
             )}
+          </div>
+
+          <div className="mt-5">
+            <h3 className="text-[11px] font-medium tracking-wide text-ink-3 uppercase">
+              Checklist
+            </h3>
+            <div className="mt-1.5">
+              <Checklist topic={topic} onToggle={toggleItem} busyIds={busyIds} />
+            </div>
           </div>
 
           <hr className="my-5 border-line" />

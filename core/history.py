@@ -29,6 +29,8 @@ FOCUS_SET = "focus_set"
 MILESTONE_SET = "milestone_set"
 MILESTONE_REMOVED = "milestone_removed"
 CONCLUSIONS_UPDATED = "conclusions_updated"
+CHECKLIST_ITEM = "checklist_item"
+CHECKLIST_ADDED = "checklist_added"
 NOTE = "note"
 
 KNOWN_TYPES = (
@@ -39,6 +41,8 @@ KNOWN_TYPES = (
     MILESTONE_SET,
     MILESTONE_REMOVED,
     CONCLUSIONS_UPDATED,
+    CHECKLIST_ITEM,
+    CHECKLIST_ADDED,
     NOTE,
 )
 
@@ -166,6 +170,11 @@ def describe(event: Event) -> str:
         return f"milestone '{event.data.get('milestone_id', label)}' updated"
     if event.type == MILESTONE_REMOVED:
         return f"milestone '{event.data.get('milestone_id', label)}' removed"
+    if event.type == CHECKLIST_ITEM:
+        verb = "checked" if event.data.get("checked") else "unchecked"
+        return f"{label}: {verb} an item"
+    if event.type == CHECKLIST_ADDED:
+        return f"{label}: added {len(event.data.get('item_ids') or [])} checklist item(s)"
     if event.type == CONCLUSIONS_UPDATED:
         return "conclusions recompiled"
     return event.note or event.type

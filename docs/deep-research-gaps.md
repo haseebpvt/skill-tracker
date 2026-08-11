@@ -1,5 +1,7 @@
 # Deep Research Brief — Skill Tracker Rubric Gaps
 
+**Status: R1–R5 ingested (2026-08-10).** Topic `enough` criteria rewritten from the rubric reports. This file kept as the audit trail / prompt archive.
+
 **Role:** Senior Python GenAI / RAG / Agentic Engineer  
 **Purpose:** Fill gaps in *what “enough” looks like* so an agent can honestly grade you (and set UI status colors) when you explain what you know.  
 **Credits:** Limited — run prompts in order. Stop after R1–R3 if budget is tight; R4–R5 are optional.

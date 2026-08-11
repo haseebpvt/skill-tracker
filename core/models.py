@@ -86,6 +86,23 @@ class Topic:
         return split_sections(self.body)
 
     @property
+    def checklist(self):
+        """The granular items to work through, parsed from the body."""
+        from .checklist import parse_checklist
+
+        return parse_checklist(self.body)
+
+    @property
+    def needs_breakdown(self) -> bool:
+        """No concrete items yet — "learn X" with nothing actionable under it."""
+        return self.checklist.total == 0
+
+    @property
+    def needs_evidence(self) -> bool:
+        """Nothing in evidence/ backs this topic, so its criteria are unsourced."""
+        return not self.evidence
+
+    @property
     def enough_md(self) -> str:
         return _find_section(self.sections, _ENOUGH_HEADINGS)
 
@@ -116,8 +133,37 @@ class Topic:
             "enough_md": self.enough_md,
             "log_md": self.log_md,
             "body_md": self.body.strip("\n"),
+            "checklist": self.checklist.to_dict(),
+            "needs_breakdown": self.needs_breakdown,
+            "needs_evidence": self.needs_evidence,
             "extra": dict(self.extra),
         }
+
+
+def coverage(topics: list["Topic"]) -> dict[str, Any]:
+    """Checklist coverage across a set of topics.
+
+    Deliberately separate from the status-weighted percentage: coverage says
+    how much of the work you have *ticked off*, status says how well you were
+    judged to know it. Ticking every box does not make you `comfortable`.
+    """
+    total = done = needs_breakdown = needs_evidence = 0
+    for topic in topics:
+        items = topic.checklist
+        total += items.total
+        done += items.done
+        if items.total == 0:
+            needs_breakdown += 1
+        if not topic.evidence:
+            needs_evidence += 1
+
+    return {
+        "total": total,
+        "done": done,
+        "percent": round(100 * done / total, 1) if total else 0.0,
+        "topics_needing_breakdown": needs_breakdown,
+        "topics_needing_evidence": needs_evidence,
+    }
 
 
 @dataclass
@@ -150,6 +196,7 @@ class Skill:
             "counts": counts,
             "min_required_total": len(min_required),
             "min_required_met": sum(1 for t in min_required if t.meets_min_bar),
+            "coverage": coverage(items),
         }
 
     def to_dict(self) -> dict[str, Any]:

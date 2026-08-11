@@ -6,6 +6,7 @@ import SkillRow from './components/SkillRow.jsx'
 import TopicDrawer from './components/TopicDrawer.jsx'
 import Conclusions from './components/Conclusions.jsx'
 import Roadmap from './components/Roadmap.jsx'
+import MilestonePanel from './components/MilestonePanel.jsx'
 import Legend from './components/Legend.jsx'
 import Markdown from './components/Markdown.jsx'
 import { useSkillState } from './lib/useSkillState.js'
@@ -43,6 +44,39 @@ export default function App() {
     (topic) => setSelected((topic && topicsById.get(topic.id)) || topic),
     [topicsById]
   )
+
+  // Keep the open milestone in sync with incoming SSE state rather than
+  // holding a stale snapshot, so ticking a box updates the panel behind it.
+  const [openMilestoneId, setOpenMilestoneId] = useState(null)
+  const openMilestone = useMemo(() => {
+    const list = state?.roadmap?.milestones || []
+    return list.find((m) => m.id === openMilestoneId) || null
+  }, [state, openMilestoneId])
+
+  // The panel wants full topic objects (with checklists) in milestone order.
+  const openMilestoneTopics = useMemo(() => {
+    if (!openMilestone) return []
+    return (openMilestone.topics || []).map((t) => topicsById.get(t.id) || t)
+  }, [openMilestone, topicsById])
+
+  const toggleChecklistItem = useCallback(async (skillId, topicId, itemId, checked) => {
+    const response = await fetch('/api/checklist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skill_id: skillId, topic_id: topicId, item_id: itemId, checked }),
+    })
+    if (!response.ok) {
+      let detail = `HTTP ${response.status}`
+      try {
+        detail = (await response.json()).error || detail
+      } catch {
+        /* keep the status code */
+      }
+      throw new Error(detail)
+    }
+    // No local state update needed: the backend publishes fresh state over SSE.
+    return response.json()
+  }, [])
 
   // Backend unreachable and nothing cached — show a readable error, not a blank page.
   if (!state) {
@@ -91,6 +125,7 @@ export default function App() {
             velocity={state.velocity}
             history={state.history}
             onSelectTopic={selectTopic}
+            onOpenMilestone={(milestone) => setOpenMilestoneId(milestone?.id || null)}
           />
         </div>
 
@@ -135,7 +170,15 @@ export default function App() {
 
       <Legend />
 
-      <TopicDrawer topic={selected} onClose={closeDrawer} />
+      <MilestonePanel
+        milestone={openMilestone}
+        topics={openMilestoneTopics}
+        onToggle={toggleChecklistItem}
+        onOpenTopic={selectTopic}
+        onClose={() => setOpenMilestoneId(null)}
+      />
+
+      <TopicDrawer topic={selected} onClose={closeDrawer} onToggleItem={toggleChecklistItem} />
     </div>
   )
 }

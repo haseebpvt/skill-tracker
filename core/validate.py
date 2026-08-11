@@ -74,6 +74,33 @@ def cross_check(state: "State") -> list[Issue]:
                     )
                 )
 
+    # --- coverage gaps ---------------------------------------------------
+    # Reported as one aggregate warning each rather than per topic: with 50+
+    # topics, per-topic warnings would bury every other issue in the banner.
+    without_breakdown = [t for t in state.all_topics if t.needs_breakdown]
+    if without_breakdown:
+        sample = ", ".join(t.id for t in without_breakdown[:3])
+        more = f" (+{len(without_breakdown) - 3} more)" if len(without_breakdown) > 3 else ""
+        issues.append(
+            Issue(
+                "warning",
+                f"{len(without_breakdown)} topic(s) have no checklist breakdown yet: {sample}{more}",
+                "data/skills",
+            )
+        )
+
+    without_evidence = [t for t in state.all_topics if t.needs_evidence]
+    if without_evidence:
+        sample = ", ".join(t.id for t in without_evidence[:3])
+        more = f" (+{len(without_evidence) - 3} more)" if len(without_evidence) > 3 else ""
+        issues.append(
+            Issue(
+                "warning",
+                f"{len(without_evidence)} topic(s) cite no evidence — evidence needed: {sample}{more}",
+                "data/skills",
+            )
+        )
+
     # --- role ordering matches skill priorities -------------------------
     if state.role is not None:
         order = state.role.skill_order

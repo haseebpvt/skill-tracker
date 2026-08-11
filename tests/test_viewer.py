@@ -104,12 +104,51 @@ def test_events_endpoint_sets_streaming_headers(repo: Repo):
     assert response.headers["x-accel-buffering"] == "no"
 
 
-def test_there_are_no_write_endpoints(client):
-    """The viewer is read-only by design (§10). Guard against regressions."""
-    routes = client.app.routes
-    for route in routes:
-        for method in getattr(route, "methods", set()):
-            assert method in {"GET", "HEAD", "OPTIONS"}, f"{route.path} exposes {method}"
+def test_checklist_is_the_only_write_endpoint(client):
+    """The viewer is read-only apart from ticking a checklist item.
+
+    That single exception is deliberate; this test exists so a second one
+    cannot appear without someone consciously editing it.
+    """
+    allowed = {"GET", "HEAD", "OPTIONS"}
+    writes = {
+        (route.path, method)
+        for route in client.app.routes
+        for method in getattr(route, "methods", set())
+        if method not in allowed
+    }
+    assert writes == {("/api/checklist", "POST")}, f"unexpected write endpoints: {writes}"
+
+
+def test_toggle_checklist_item(client, repo: Repo):
+    repo.add_checklist_items("alpha", "first-topic", ["Read the paper", "Build a toy version"])
+    item_id = repo.load().skill("alpha").topic("first-topic").checklist.items[0].id
+
+    response = client.post(
+        "/api/checklist",
+        json={"skill_id": "alpha", "topic_id": "first-topic", "item_id": item_id, "checked": True},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["changed"] is True
+    assert body["item"]["checked"] is True
+    assert body["checklist"]["done"] == 1
+
+    # And it actually landed in the markdown.
+    assert "- [x] Read the paper" in (repo.root / "data/skills/alpha/topics.md").read_text()
+
+
+def test_toggle_rejects_unknown_item(client):
+    response = client.post(
+        "/api/checklist",
+        json={"skill_id": "alpha", "topic_id": "first-topic", "item_id": "ghost", "checked": True},
+    )
+    assert response.status_code == 400
+    assert "unknown checklist item" in response.json()["error"]
+
+
+def test_toggle_rejects_malformed_body(client):
+    assert client.post("/api/checklist", json={"skill_id": "alpha"}).status_code == 422
 
 
 def test_sse_frame_encoding():

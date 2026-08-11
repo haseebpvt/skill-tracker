@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from . import checklist as checklist_mod
 from . import evidence as evidence_mod
 from . import history as history_mod
 from . import roadmap as roadmap_mod
@@ -24,6 +25,7 @@ from .markdown import ParseError, join_frontmatter, split_frontmatter, today
 from .models import (
     STATUS_WEIGHTS,
     STATUSES,
+    coverage,
     Conclusions,
     EvidenceFile,
     Issue,
@@ -89,6 +91,7 @@ class State:
                 "total": len(min_required),
                 "met": sum(1 for t in min_required if t.meets_min_bar),
             },
+            "coverage": coverage(topics),
         }
 
     def evidence_status(self) -> dict[str, list[str]]:
@@ -627,6 +630,131 @@ class Repo:
             meta["priority"] = index
             meta["updated"] = today()
             self._write(meta_path, join_frontmatter(meta, body))
+
+    # -- checklists ------------------------------------------------------
+
+    def _edit_topic(self, skill_id: str, topic_id: str, mutate):
+        """Load the topic's file, apply ``mutate(topic)``, write it back.
+
+        ``mutate`` returns a result to hand back to the caller, or ``None`` to
+        abandon the write.
+        """
+        folder = self._skill_folder(skill_id)
+        for parsed in self._load_topic_files(folder, skill_id):
+            topic = next((t for t in parsed.topics if t.id == topic_id), None)
+            if topic is None:
+                continue
+            result = mutate(topic)
+            if result is None:
+                return None
+            topic.updated = today()
+            self._write(self.root / parsed.path, serialize_topics(parsed))
+            self._touch_skill(folder)
+            return result
+        raise RepoError(f"unknown topic '{topic_id}' in skill '{skill_id}'")
+
+    def set_checklist_item(self, skill_id: str, topic_id: str, item_id: str, checked: bool) -> dict[str, Any]:
+        """Tick or untick one checklist item inside a topic."""
+        captured: dict[str, Any] = {}
+
+        def mutate(topic: Topic):
+            outcome = checklist_mod.set_item(topic.body, item_id, checked)
+            if outcome is None:
+                known = ", ".join(i.id for i in topic.checklist.items) or "none"
+                raise RepoError(f"unknown checklist item '{item_id}' in topic '{topic_id}'. Known items: {known}")
+            body, item = outcome
+            if body == topic.body:
+                # Already in the requested state — do not churn the file.
+                captured["item"] = item.to_dict()
+                captured["changed"] = False
+                return None
+            topic.body = body
+            captured["item"] = item.to_dict()
+            captured["changed"] = True
+            return captured
+
+        result = self._edit_topic(skill_id, topic_id, mutate)
+        if result is None:
+            # Unchanged: report current state without touching disk or history.
+            state = self.load()
+            topic = next((t for t in state.all_topics if t.id == topic_id), None)
+            return {
+                "skill_id": skill_id,
+                "topic_id": topic_id,
+                "changed": False,
+                "item": captured.get("item"),
+                "checklist": topic.checklist.to_dict() if topic else None,
+            }
+
+        self._commit(
+            Event(
+                ts=utc_now(),
+                type=history_mod.CHECKLIST_ITEM,
+                skill_id=skill_id,
+                topic_id=topic_id,
+                note=("checked" if checked else "unchecked") + f": {captured['item']['text']}",
+                data={"item_id": item_id, "checked": checked},
+            )
+        )
+
+        state = self.load()
+        topic = next((t for t in state.all_topics if t.id == topic_id), None)
+        return {
+            "skill_id": skill_id,
+            "topic_id": topic_id,
+            "changed": True,
+            "item": captured["item"],
+            "checklist": topic.checklist.to_dict() if topic else None,
+        }
+
+    def add_checklist_items(
+        self,
+        skill_id: str,
+        topic_id: str,
+        items: Iterable[str],
+        *,
+        section: str = checklist_mod.DEFAULT_SECTION,
+    ) -> dict[str, Any]:
+        """Append concrete, ordered items to a topic's checklist."""
+        texts = [str(text) for text in items if str(text).strip()]
+        if not texts:
+            raise RepoError("no checklist items supplied")
+
+        captured: dict[str, Any] = {}
+
+        def mutate(topic: Topic):
+            body, added = checklist_mod.add_items(topic.body, texts, section=section)
+            captured["added"] = added
+            captured["skipped"] = len(texts) - len(added)
+            if not added:
+                return None
+            topic.body = body
+            return captured
+
+        result = self._edit_topic(skill_id, topic_id, mutate)
+        if result is None:
+            return {"skill_id": skill_id, "topic_id": topic_id, "added": [], "skipped": captured.get("skipped", 0)}
+
+        self._commit(
+            Event(
+                ts=utc_now(),
+                type=history_mod.CHECKLIST_ADDED,
+                skill_id=skill_id,
+                topic_id=topic_id,
+                note=f"added {len(captured['added'])} checklist item(s)",
+                data={"item_ids": captured["added"], "section": section},
+            )
+        )
+
+        state = self.load()
+        topic = next((t for t in state.all_topics if t.id == topic_id), None)
+        return {
+            "skill_id": skill_id,
+            "topic_id": topic_id,
+            "added": captured["added"],
+            "skipped": captured["skipped"],
+            "checklist": topic.checklist.to_dict() if topic else None,
+        }
 
     # -- roadmap ---------------------------------------------------------
 

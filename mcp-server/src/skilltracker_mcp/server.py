@@ -339,6 +339,94 @@ def update_role_order(
 
 
 # ----------------------------------------------------------------------
+# Checklists — the granular breakdown under each topic
+# ----------------------------------------------------------------------
+
+
+@server.tool(
+    description=(
+        "Break a topic down into concrete, ordered items the human can actually work through and tick "
+        "off. This is the difference between 'learn transformer architecture' and knowing what to do "
+        "on Tuesday morning.\n\n"
+        "Write items in the order they should be tackled — earlier items should build toward later "
+        "ones. Make each one checkable in a single sitting and concrete enough that finishing it is "
+        "unambiguous ('Implement a toy attention head in numpy', not 'Understand attention'). Ground "
+        "them in the topic's 'what enough looks like' criteria and its evidence files, and prefer 5-12 "
+        "items over an exhaustive list.\n\n"
+        "Items already present are skipped, so this is safe to re-run. See MASTER.md → checklists."
+    )
+)
+def add_checklist_items(
+    skill_id: Annotated[str, Field(description="Skill folder id")],
+    topic_id: Annotated[str, Field(description="Topic id to break down")],
+    items: Annotated[list[str], Field(description="Item texts, in the order they should be done")],
+    section: Annotated[
+        str, Field(description="Heading to group them under, e.g. 'Checklist' or 'Problems'")
+    ] = "Checklist",
+) -> dict[str, Any]:
+    return _guard(_repo().add_checklist_items, skill_id, topic_id, items, section=section)
+
+
+@server.tool(
+    description=(
+        "Tick or untick one checklist item. The human can also click these in the viewer, so read the "
+        "current state before assuming. Ticking items is a record of work done — it does NOT change "
+        "the topic's status, which still requires your judgement via update_topic_status."
+    )
+)
+def set_checklist_item(
+    skill_id: Annotated[str, Field(description="Skill folder id")],
+    topic_id: Annotated[str, Field(description="Topic id")],
+    item_id: Annotated[str, Field(description="Checklist item id (a slug of its text)")],
+    checked: Annotated[bool, Field(description="True to tick, False to untick")] = True,
+) -> dict[str, Any]:
+    return _guard(_repo().set_checklist_item, skill_id, topic_id, item_id, checked)
+
+
+@server.tool(
+    description=(
+        "Find the holes in the plan: topics with no checklist breakdown ('learn X' with nothing "
+        "actionable under it) and topics citing no evidence (criteria nobody sourced).\n\n"
+        "Use this to decide what to fix next. Prioritise by the milestone that is due soonest — a "
+        "topic the human hits next week matters more than one in week four. See MASTER.md → checklists."
+    )
+)
+def get_coverage_gaps() -> dict[str, Any]:
+    state = _repo().load()
+    roadmap = state.roadmap_view()
+
+    # Which milestone owns each topic, so gaps can be prioritised by due date.
+    owner: dict[str, dict[str, Any]] = {}
+    for milestone in roadmap.get("milestones", []):
+        for entry in milestone.get("topics", []):
+            owner.setdefault(entry["id"], {"milestone_id": milestone["id"], "target": milestone.get("target")})
+
+    def describe(topic):
+        info = owner.get(topic.id, {})
+        return {
+            "skill_id": topic.skill_id,
+            "topic_id": topic.id,
+            "title": topic.title,
+            "status": topic.status,
+            "min_required": topic.min_required,
+            "milestone_id": info.get("milestone_id"),
+            "milestone_target": info.get("target"),
+            "checklist_items": topic.checklist.total,
+            "evidence": list(topic.evidence),
+        }
+
+    needs_breakdown = [describe(t) for t in state.all_topics if t.needs_breakdown]
+    needs_evidence = [describe(t) for t in state.all_topics if t.needs_evidence]
+    by_target = lambda entry: (entry["milestone_target"] or "9999-12-31", entry["topic_id"])  # noqa: E731
+
+    return {
+        "coverage": state.summary()["coverage"],
+        "needs_breakdown": sorted(needs_breakdown, key=by_target),
+        "needs_evidence": sorted(needs_evidence, key=by_target),
+    }
+
+
+# ----------------------------------------------------------------------
 # Roadmap
 # ----------------------------------------------------------------------
 

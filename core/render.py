@@ -71,6 +71,18 @@ def _headline(summary: dict, roadmap: dict, velocity: dict) -> list[str]:
     lines.append("")
     lines.append(f"- Minimum bar: **{min_bar.get('met', 0)}/{min_bar.get('total', 0)}** topics at comfortable or better")
 
+    cov = summary.get("coverage") or {}
+    if cov.get("total"):
+        lines.append(
+            f"- Checklist: **{cov.get('done', 0)}/{cov.get('total', 0)}** items ticked ({cov.get('percent', 0)}%)"
+        )
+    if cov.get("topics_needing_breakdown"):
+        lines.append(
+            f"- **{cov['topics_needing_breakdown']} topic(s) have no breakdown yet** — nothing concrete to work through"
+        )
+    if cov.get("topics_needing_evidence"):
+        lines.append(f"- {cov['topics_needing_evidence']} topic(s) cite no evidence")
+
     if roadmap.get("target_date"):
         lines.append(f"- Target date: **{roadmap['target_date']}**")
 
@@ -117,7 +129,12 @@ def _milestones(roadmap: dict, *, today: date) -> list[str]:
             ]
         return ["## Milestones", "", "_The roadmap has no milestones yet._", ""]
 
-    lines = ["## Milestones", "", "| Milestone | Target | Progress | Done | Status |", "|---|---|---|---|---|"]
+    lines = [
+        "## Milestones",
+        "",
+        "| Milestone | Target | Progress | Done | Items | Status |",
+        "|---|---|---|---|---|---|",
+    ]
     for entry in milestones:
         progress = entry.get("progress") or {}
         percent = progress.get("percent", 0.0)
@@ -126,9 +143,11 @@ def _milestones(roadmap: dict, *, today: date) -> list[str]:
         target = entry.get("target") or "—"
         if days is not None and entry.get("derived_status") not in ("done",):
             target += f" ({_humanise_days(days)})"
+        cov = entry.get("coverage") or {}
+        items = f"{cov.get('done', 0)}/{cov.get('total', 0)}" if cov.get("total") else "—"
         lines.append(
             f"| {entry.get('title', entry.get('id'))} | {target} | `{bar(percent, 14)}` {percent}% | "
-            f"{progress.get('complete', 0)}/{progress.get('total', 0)} | {state} |"
+            f"{progress.get('complete', 0)}/{progress.get('total', 0)} | {items} | {state} |"
         )
     lines.append("")
 
@@ -192,13 +211,16 @@ def _skills(state_dict: dict) -> list[str]:
     if not skills:
         return []
 
-    lines = ["## Skills", "", "| # | Skill | Progress | Topics | Min bar |", "|---|---|---|---|---|"]
+    lines = ["## Skills", "", "| # | Skill | Progress | Topics | Min bar | Items |", "|---|---|---|---|---|---|"]
     for index, skill in enumerate(skills, start=1):
         progress = skill.get("progress") or {}
         percent = progress.get("percent", 0.0)
+        cov = progress.get("coverage") or {}
+        items = f"{cov.get('done', 0)}/{cov.get('total', 0)}" if cov.get("total") else "—"
         lines.append(
             f"| {index} | {skill.get('name')} | `{bar(percent, 14)}` {percent}% | "
-            f"{progress.get('total', 0)} | {progress.get('min_required_met', 0)}/{progress.get('min_required_total', 0)} |"
+            f"{progress.get('total', 0)} | {progress.get('min_required_met', 0)}/{progress.get('min_required_total', 0)} "
+            f"| {items} |"
         )
     lines.append("")
     return lines
